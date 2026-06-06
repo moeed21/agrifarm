@@ -27,7 +27,15 @@ def send_order_confirmation(order, buyer_email=None, seller_email=None):
 
     # ── BUYER EMAIL ───────────────────────────────────────────
     if buyer_email:
-        buyer_subject = f"✅ Order Confirmed — {order['crop']} | AgriBazaar"
+        buyer_subject = f"Order Confirmed — {order['crop']} | AgriFarm"
+        # Build payment instruction outside f-string (Python 3.11 safe)
+        if order.get('pay_method') == 'cod':
+            pay_instruction_html = '📞 <strong>Cash on Delivery:</strong> The seller will contact you to arrange delivery. Please keep your phone handy.'
+            pay_instruction_txt  = 'The seller will contact you to arrange delivery (COD).'
+        else:
+            total_fmt = f"{order['total']:,}"
+            pay_instruction_html = f'💳 <strong>{pay}:</strong> Please transfer <strong>{total_fmt} PKR</strong> to the seller\'s account. Share your transaction ID on WhatsApp.'
+            pay_instruction_txt  = f'Please transfer {total_fmt} PKR to the seller account.'
         buyer_html = f"""
 <!DOCTYPE html>
 <html>
@@ -83,7 +91,7 @@ def send_order_confirmation(order, buyer_email=None, seller_email=None):
     </table>
 
     <div class="info-box">
-      {'📞 <strong>Cash on Delivery:</strong> The seller will contact you to arrange delivery. Please keep your phone handy.' if order.get('pay_method') == 'cod' else f'💳 <strong>{pay}:</strong> Please transfer <strong>{order["total"]:,} PKR</strong> to the seller\'s account. Share your transaction ID on WhatsApp.'}
+      {pay_instruction_html}
     </div>
 
     <div style="text-align:center">
@@ -116,7 +124,7 @@ Payment  : {pay}
 Total    : {order['total']:,} PKR
 Status   : Pending
 
-{'The seller will contact you to arrange delivery (COD).' if order.get('pay_method') == 'cod' else f'Please transfer {order["total"]:,} PKR to the seller account.'}
+{pay_instruction_txt}
 
 Track your order: http://127.0.0.1:8000/profile/buyer/
 
