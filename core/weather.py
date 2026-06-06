@@ -85,7 +85,7 @@ def get_current_weather_fast(city):
         cached = _cache.get(cache_key)
         if cached and (datetime.now() - cached["ts"]).seconds < 1800:
             return cached["data"]
-    url = f"https://wttr.in/{coords["lat"]},{coords["lon"]}?format=j1"
+    url = f"https://wttr.in/{coords['lat']},{coords['lon']}?format=j1"
     data = _fetch_url(url, timeout=4)
     if not data:
         return None
