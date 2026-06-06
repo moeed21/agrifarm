@@ -1,0 +1,397 @@
+{% extends 'core/base.html' %}
+{% block title %}Checkout — {{ listing.crop }} | AgriFarm{% endblock %}
+
+{% block extra_css %}
+<style>
+/* ── CHECKOUT HEADER ── */
+.ck-header{background:linear-gradient(135deg,var(--g900) 0%,var(--g700) 100%);padding:0;border-bottom:3px solid var(--g600)}
+.ck-header-inner{max-width:1100px;margin:0 auto;padding:20px 24px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.ck-back{display:inline-flex;align-items:center;gap:6px;color:rgba(255,255,255,.65);font-size:13px;font-weight:700;text-decoration:none;transition:.15s}
+.ck-back:hover{color:#fff}
+.ck-title{font-family:var(--serif);font-size:22px;color:#fff;font-weight:900;display:flex;align-items:center;gap:10px}
+.ck-steps{display:flex;align-items:center;gap:6px}
+.ck-step{display:flex;align-items:center;gap:5px;font-size:11px;font-weight:700;color:rgba(255,255,255,.5);padding:4px 10px;border-radius:20px;border:1.5px solid rgba(255,255,255,.15)}
+.ck-step.active{color:#fff;border-color:rgba(255,255,255,.45);background:rgba(255,255,255,.1)}
+.ck-step.done{color:var(--g300);border-color:var(--g500);background:rgba(255,255,255,.07)}
+.ck-step-dot{width:6px;height:6px;border-radius:50%;background:currentColor}
+
+/* ── LAYOUT ── */
+.ck-wrap{max-width:1100px;margin:0 auto;padding:28px 24px 60px}
+.ck-grid{display:grid;grid-template-columns:1fr 370px;gap:22px;align-items:start}
+
+/* ── FORM CARD ── */
+.ck-card{background:#fff;border:2px solid var(--border);border-radius:var(--r16);overflow:hidden;margin-bottom:16px;box-shadow:var(--sh1)}
+.ck-card-hd{background:linear-gradient(90deg,var(--g900),var(--g700));color:#fff;padding:14px 20px;display:flex;align-items:center;gap:11px;font-weight:900;font-size:14px}
+.ck-step-num{width:28px;height:28px;background:var(--gold);color:var(--g900);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:900;flex-shrink:0}
+.ck-card-bd{padding:20px}
+
+/* form grid */
+.frow-2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.frow-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+
+/* ── PAYMENT OPTIONS ── */
+.pay-options{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.pay-opt{display:flex;align-items:flex-start;gap:11px;border:2px solid var(--border);border-radius:var(--r10);padding:14px;cursor:pointer;transition:all .18s;background:var(--bg);position:relative}
+.pay-opt:has(input:checked){border-color:var(--g500);background:#f0fdf4;box-shadow:0 0 0 3px rgba(58,170,85,.08)}
+.pay-opt input{position:absolute;opacity:0}
+.po-radio{width:18px;height:18px;border-radius:50%;border:2px solid var(--border);flex-shrink:0;margin-top:1px;display:flex;align-items:center;justify-content:center;transition:.15s}
+.pay-opt:has(input:checked) .po-radio{border-color:var(--g500);background:var(--g500)}
+.pay-opt:has(input:checked) .po-radio::after{content:'';width:7px;height:7px;border-radius:50%;background:#fff;display:block}
+.po-icon{font-size:26px;flex-shrink:0;line-height:1}
+.po-title{font-weight:800;font-size:13px;color:var(--ink)}
+.po-sub{font-size:11.5px;color:var(--muted);margin-top:2px;line-height:1.4}
+
+/* ── STICKY SIDEBAR ── */
+.ck-sidebar{position:sticky;top:22px}
+.sum-card{background:#fff;border:2px solid var(--border);border-radius:var(--r16);overflow:hidden;box-shadow:var(--sh2)}
+.sum-card-hd{background:linear-gradient(135deg,var(--g900),var(--g700));color:#fff;padding:14px 18px;font-weight:900;font-size:14px}
+
+/* product in sidebar */
+.sum-product{padding:16px 18px;display:flex;gap:12px;align-items:center;border-bottom:1px solid var(--border)}
+.sum-product-img{width:60px;height:60px;border-radius:var(--r8);object-fit:cover;background:var(--g50);display:flex;align-items:center;justify-content:center;font-size:30px;flex-shrink:0}
+.sum-product-img img{width:100%;height:100%;object-fit:cover;border-radius:var(--r8)}
+.sum-product-name{font-weight:800;font-size:14px;color:var(--ink)}
+.sum-product-seller{font-size:11.5px;color:var(--muted);margin-top:2px}
+.sum-product-price{font-size:13px;font-weight:700;color:var(--g700);margin-top:3px}
+
+/* line items */
+.sum-lines{padding:14px 18px;border-bottom:1px solid var(--border)}
+.sum-row{display:flex;justify-content:space-between;align-items:center;padding:5px 0;font-size:13px}
+.sum-row-label{color:var(--muted)}
+.sum-row-value{font-weight:700;color:var(--ink)}
+
+/* total row */
+.sum-total{padding:14px 18px;background:var(--g50);display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border)}
+.sum-total-label{font-weight:700;font-size:14px;color:var(--ink)}
+.sum-total-amount{font-family:var(--serif);font-size:24px;font-weight:900;color:var(--g700)}
+
+/* ai verdict in sidebar */
+.sum-verdict{padding:14px 18px;border-bottom:1px solid var(--border)}
+.verdict-pill{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;padding:6px 12px;border-radius:20px}
+
+/* submit section */
+.sum-cta{padding:16px 18px}
+.btn-place-order{display:flex;align-items:center;justify-content:center;gap:9px;width:100%;background:linear-gradient(135deg,var(--g700),var(--g600));color:#fff;border:none;border-radius:var(--r10);padding:15px;font-size:15px;font-weight:800;cursor:pointer;font-family:var(--font);transition:all .18s;box-shadow:0 4px 14px rgba(56,142,60,.3);text-decoration:none;margin-bottom:10px}
+.btn-place-order:hover:not(:disabled){background:linear-gradient(135deg,var(--g800),var(--g700));transform:translateY(-1px);box-shadow:0 6px 20px rgba(56,142,60,.4)}
+.btn-place-order:disabled{opacity:.5;cursor:not-allowed}
+
+/* trust row */
+.trust-row{display:flex;justify-content:center;gap:14px;flex-wrap:wrap;padding:10px 0 4px}
+.trust-item{display:flex;align-items:center;gap:4px;font-size:11px;color:var(--muted);font-weight:600}
+
+/* qty ctrl in checkout */
+.qty-ctrl{display:flex;align-items:center;border:2px solid var(--g200);border-radius:var(--r8);overflow:hidden;width:fit-content}
+.qty-btn{width:36px;height:36px;background:#fff;border:none;font-size:20px;cursor:pointer;color:var(--g700);font-weight:700;transition:background .1s}
+.qty-btn:hover{background:var(--g100)}
+.qty-inp{width:60px;height:36px;border:none;text-align:center;font-size:15px;font-weight:800;font-family:var(--font);background:#fff}
+
+/* crop row in form */
+.crop-preview{display:flex;align-items:center;gap:14px;background:var(--g50);border:1.5px solid var(--border);border-radius:var(--r10);padding:14px;margin-bottom:6px}
+.crop-preview-emoji{font-size:40px;flex-shrink:0}
+
+/* alerts in checkout */
+.ck-alert{display:flex;align-items:flex-start;gap:10px;padding:12px 16px;border-radius:var(--r10);margin-bottom:16px;font-size:13px;font-weight:600}
+.ck-alert-warn{background:#fff7ed;border:1.5px solid #fbbf24;color:#92400e}
+.ck-alert-error{background:#fff1f2;border:1.5px solid #fca5a5;color:#b91c1c}
+
+@media(max-width:900px){
+  .ck-grid{grid-template-columns:1fr}
+  .ck-sidebar{position:static}
+  .pay-options{grid-template-columns:1fr}
+}
+@media(max-width:600px){
+  .frow-2{grid-template-columns:1fr}
+  .ck-steps{display:none}
+}
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- ══ CHECKOUT HEADER ══ -->
+<div class="ck-header">
+  <div class="ck-header-inner">
+    <div style="display:flex;flex-direction:column;gap:6px">
+      <a href="{% url 'listing_detail' listing.id %}" class="ck-back">← Back to Product Details</a>
+      <div class="ck-title">🔒 Secure Checkout</div>
+    </div>
+    <div class="ck-steps">
+      <a href="{% url 'listing_detail' listing.id %}" class="ck-step done" style="text-decoration:none">
+        <span class="ck-step-dot"></span> 1 · Product
+      </a>
+      <span style="color:rgba(255,255,255,.3);font-size:12px">›</span>
+      <div class="ck-step active"><span class="ck-step-dot"></span> 2 · Checkout</div>
+      <span style="color:rgba(255,255,255,.3);font-size:12px">›</span>
+      <div class="ck-step"><span class="ck-step-dot"></span> 3 · Confirmed</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MAIN CONTENT ══ -->
+<div class="ck-wrap">
+
+  {% if error %}
+  <div class="ck-alert ck-alert-error">
+    <span style="font-size:18px">⚠️</span>
+    <span>{{ error }}</span>
+  </div>
+  {% endif %}
+
+  {% if need_login %}
+  <div class="ck-alert ck-alert-warn">
+    <span style="font-size:18px">🔐</span>
+    <div>
+      Please <a href="{% url 'login' %}?next=/checkout/{{ listing.id }}/" style="color:var(--g700);font-weight:800">login</a>
+      or <a href="{% url 'register' %}" style="color:var(--g700);font-weight:800">create an account</a> to complete your order.
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="ck-grid">
+
+    <!-- ══ LEFT: FORM ══ -->
+    <div>
+      <form method="post" id="ck-form">{% csrf_token %}
+
+        <!-- Step 1: Contact -->
+        <div class="ck-card">
+          <div class="ck-card-hd">
+            <div class="ck-step-num">1</div>
+            Contact Information
+          </div>
+          <div class="ck-card-bd">
+            <div class="frow-2" style="margin-bottom:14px">
+              <div class="fgrp">
+                <label>Full Name *</label>
+                <input type="text" name="buyer_name" class="finp" value="{{ user.name|default:'' }}" required placeholder="Your full name">
+              </div>
+              <div class="fgrp">
+                <label>Phone *</label>
+                <input type="tel" name="buyer_phone" class="finp" value="{{ user.phone|default:'' }}" required placeholder="03XX-XXXXXXX">
+              </div>
+            </div>
+            <div class="frow-2" style="margin-bottom:14px">
+              <div class="fgrp">
+                <label>City *</label>
+                <select name="buyer_city" class="finp" required>
+                  <option value="">— Select city —</option>
+                  {% for c in cities %}
+                  <option value="{{ c }}" {% if user.city == c %}selected{% endif %}>{{ c }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+              <div class="fgrp">
+                <label>Area / Locality *</label>
+                <input type="text" name="buyer_area" class="finp" placeholder="DHA, Gulberg, Saddar…" required>
+              </div>
+            </div>
+            <div class="fgrp">
+              <label>Delivery Address *</label>
+              <textarea name="buyer_address" class="finp" rows="2" placeholder="House/plot number, street, landmark…" required></textarea>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 2: Product & Quantity -->
+        <div class="ck-card">
+          <div class="ck-card-hd">
+            <div class="ck-step-num">2</div>
+            Product &amp; Quantity
+          </div>
+          <div class="ck-card-bd">
+            <div class="crop-preview">
+              {% if listing.image %}
+                <img src="{{ listing.image }}" style="width:56px;height:56px;border-radius:10px;object-fit:cover;flex-shrink:0" alt="{{ listing.crop }}">
+              {% else %}
+                <div class="crop-preview-emoji">{{ listing.emoji }}</div>
+              {% endif %}
+              <div style="flex:1">
+                <div style="font-weight:900;font-size:16px;color:var(--ink)">{{ listing.crop }}</div>
+                <div style="font-size:12.5px;color:var(--muted);margin-top:2px">{{ listing.city }}{% if listing.market %} · {{ listing.market }}{% endif %}</div>
+                <div style="font-size:13px;font-weight:700;color:var(--g700);margin-top:3px">{{ listing.price }} PKR/kg</div>
+              </div>
+              <div style="text-align:right">
+                <div style="font-size:11px;color:var(--muted);font-weight:600">Available</div>
+                <div style="font-size:14px;font-weight:800;color:var(--ink)">{{ listing.qty }} kg</div>
+              </div>
+            </div>
+
+            <div style="display:flex;align-items:center;justify-content:space-between;background:var(--g50);border:1.5px solid var(--border);border-radius:var(--r10);padding:14px;margin-top:12px">
+              <div>
+                <div style="font-size:12px;font-weight:700;color:var(--muted);margin-bottom:2px">QUANTITY (KG)</div>
+                <div id="qty-preview" style="font-size:12px;color:var(--g600);font-weight:600">50 kg × {{ listing.price }} PKR/kg</div>
+              </div>
+              <div class="qty-ctrl">
+                <button type="button" class="qty-btn" onclick="adjQty(-10)">−</button>
+                <input type="number" id="qty-inp" name="qty" value="{{ qty|default:50 }}" min="1" max="{{ listing.qty }}" class="qty-inp" oninput="updTotal()">
+                <button type="button" class="qty-btn" onclick="adjQty(10)">+</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 3: Payment -->
+        <div class="ck-card">
+          <div class="ck-card-hd">
+            <div class="ck-step-num">3</div>
+            Payment Method
+          </div>
+          <div class="ck-card-bd">
+            <div class="pay-options">
+              <label class="pay-opt">
+                <input type="radio" name="pay_method" value="cod" checked>
+                <div class="po-radio"></div>
+                <span class="po-icon">💵</span>
+                <div>
+                  <div class="po-title">Cash on Delivery</div>
+                  <div class="po-sub">Pay when order arrives. Safe &amp; easy.</div>
+                </div>
+              </label>
+              <label class="pay-opt">
+                <input type="radio" name="pay_method" value="jazzcash">
+                <div class="po-radio"></div>
+                <span class="po-icon">📱</span>
+                <div>
+                  <div class="po-title">JazzCash</div>
+                  <div class="po-sub">Instant mobile wallet transfer.</div>
+                </div>
+              </label>
+              <label class="pay-opt">
+                <input type="radio" name="pay_method" value="easypaisa">
+                <div class="po-radio"></div>
+                <span class="po-icon">📲</span>
+                <div>
+                  <div class="po-title">EasyPaisa</div>
+                  <div class="po-sub">Mobile account instant payment.</div>
+                </div>
+              </label>
+              <label class="pay-opt">
+                <input type="radio" name="pay_method" value="bank">
+                <div class="po-radio"></div>
+                <span class="po-icon">🏦</span>
+                <div>
+                  <div class="po-title">Bank Transfer</div>
+                  <div class="po-sub">HBL · MCB · UBL · Meezan IBFT</div>
+                </div>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <input type="hidden" name="listing_id" value="{{ listing.id }}">
+
+        <!-- Submit button — mobile only (desktop uses sidebar) -->
+        <div style="display:none" class="mobile-submit">
+          <button type="submit" class="btn-place-order" {% if need_login %}disabled{% endif %}>
+            {% if need_login %}🔒 Login Required{% else %}⚡ Place Order Now{% endif %}
+          </button>
+        </div>
+
+      </form>
+    </div>
+
+    <!-- ══ RIGHT: ORDER SUMMARY SIDEBAR ══ -->
+    <div class="ck-sidebar">
+      <div class="sum-card">
+        <div class="sum-card-hd">📋 Order Summary</div>
+
+        <!-- Product preview -->
+        <div class="sum-product">
+          <div class="sum-product-img">
+            {% if listing.image %}
+              <img src="{{ listing.image }}" alt="{{ listing.crop }}">
+            {% else %}
+              {{ listing.emoji }}
+            {% endif %}
+          </div>
+          <div>
+            <div class="sum-product-name">{{ listing.crop }}</div>
+            <div class="sum-product-seller">Sold by {{ listing.seller }}</div>
+            <div class="sum-product-price">{{ listing.price }} PKR/kg</div>
+          </div>
+        </div>
+
+        <!-- Line items -->
+        <div class="sum-lines">
+          <div class="sum-row">
+            <span class="sum-row-label">Price per kg</span>
+            <span class="sum-row-value">{{ listing.price }} PKR</span>
+          </div>
+          <div class="sum-row">
+            <span class="sum-row-label">Quantity</span>
+            <span class="sum-row-value" id="sum-qty-display">50 kg</span>
+          </div>
+          <div class="sum-row">
+            <span class="sum-row-label">Delivery</span>
+            <span style="font-size:12px;font-weight:700;color:var(--g500)">Negotiable</span>
+          </div>
+        </div>
+
+        <!-- Total -->
+        <div class="sum-total">
+          <div>
+            <div class="sum-total-label">Total Amount</div>
+            <div style="font-size:11px;color:var(--muted)">excl. delivery</div>
+          </div>
+          <div id="sum-total" class="sum-total-amount">{% widthratio 50 1 listing.price %} PKR</div>
+        </div>
+
+        <!-- AI Verdict -->
+        {% if analysis %}
+        <div class="sum-verdict">
+          <div style="font-size:11px;font-weight:700;color:var(--muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px">Market Signal</div>
+          <div class="verdict-pill {{ analysis.vc }}">
+            {{ analysis.vi }} {{ analysis.verdict|truncatechars:40 }}
+          </div>
+          <div style="font-size:12px;color:var(--muted);margin-top:6px;line-height:1.5">{{ analysis.vr|truncatechars:100 }}</div>
+        </div>
+        {% endif %}
+
+        <!-- Submit CTA -->
+        <div class="sum-cta">
+          <button type="submit" form="ck-form" class="btn-place-order" {% if need_login %}disabled{% endif %} id="place-order-btn">
+            {% if need_login %}🔒 Login Required{% else %}⚡ Place Order Now{% endif %}
+          </button>
+          <div class="trust-row">
+            <span class="trust-item">🔒 Secure</span>
+            <span class="trust-item">🛡️ Protected</span>
+            <span class="trust-item">✅ Verified</span>
+          </div>
+          <div style="font-size:11px;color:var(--muted);text-align:center;margin-top:8px;line-height:1.5">
+            By placing an order you agree to our terms.<br>
+            Seller will contact you to arrange delivery.
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+const ppkg = {{ listing.price }};
+
+function adjQty(d){
+  const i = document.getElementById('qty-inp');
+  i.value = Math.max(1, (parseInt(i.value)||50) + d);
+  updTotal();
+}
+
+function updTotal(){
+  const q = parseInt(document.getElementById('qty-inp').value) || 0;
+  const total = q * ppkg;
+  document.getElementById('sum-qty-display').textContent = q + ' kg';
+  document.getElementById('sum-total').textContent = total.toLocaleString() + ' PKR';
+  document.getElementById('qty-preview').textContent = q + ' kg × ' + ppkg + ' PKR/kg';
+}
+
+// Pre-fill qty from URL param
+(function(){
+  const urlQty = new URLSearchParams(window.location.search).get('qty');
+  if(urlQty){
+    document.getElementById('qty-inp').value = parseInt(urlQty);
+    updTotal();
+  }
+})();
+</script>
+{% endblock %}

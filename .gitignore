@@ -1,0 +1,41 @@
+# ── Python ────────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pyc
+*.egg
+*.egg-info/
+dist/
+build/
+*.whl
+
+# ── Virtual environments ───────────────────────────────────────────────────────
+venv/
+env/
+.venv/
+.env_local/
+
+# ── Environment variables — NEVER commit this ─────────────────────────────────
+.env
+.env.*
+!.env.example        # allow the example/template file only
+
+# ── Django ────────────────────────────────────────────────────────────────────
+*.log
+*.pot
+db.sqlite3
+agribazaar.db
+/staticfiles/
+/media/
+
+# ── IDE / Editor ──────────────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# ── OS ────────────────────────────────────────────────────────────────────────
+desktop.ini

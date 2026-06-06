@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Admin Login — AgriFarm</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',sans-serif;background:linear-gradient(135deg,#0f2210 0%,#1a3a1a 50%,#0d1f0d 100%);min-height:100vh;display:flex;align-items:center;justify-content:center}
+.card{background:#fff;border-radius:20px;padding:44px 40px;width:100%;max-width:400px;box-shadow:0 30px 80px rgba(0,0,0,.4)}
+.logo{text-align:center;margin-bottom:28px}
+.logo-icon{font-size:40px;margin-bottom:8px}
+.logo-title{font-size:22px;font-weight:900;color:#1a2e1a}
+.logo-sub{font-size:12px;color:#6b7280;margin-top:3px;font-weight:600;text-transform:uppercase;letter-spacing:.8px}
+label{display:block;font-size:12px;font-weight:700;color:#374151;margin-bottom:5px}
+input{width:100%;padding:11px 14px;border:2px solid #e5e7eb;border-radius:10px;font-size:14px;font-family:inherit;transition:.15s;outline:none}
+input:focus{border-color:#2d7a2d;box-shadow:0 0 0 3px rgba(45,122,45,.12)}
+.fgrp{margin-bottom:16px}
+.btn{display:block;width:100%;padding:13px;background:linear-gradient(135deg,#2d7a2d,#1a5c1a);color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:800;cursor:pointer;margin-top:8px;transition:.2s;font-family:inherit}
+.btn:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(45,122,45,.4)}
+.error{background:#fef2f2;border:1.5px solid #fca5a5;border-radius:8px;padding:10px 14px;color:#991b1b;font-size:13px;font-weight:600;margin-bottom:16px}
+.divider{border:none;border-top:1.5px solid #f3f4f6;margin:20px 0}
+.back{text-align:center;font-size:12px;color:#6b7280}
+.back a{color:#2d7a2d;font-weight:700;text-decoration:none}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="logo">
+    <div class="logo-icon">🌿</div>
+    <div class="logo-title">AgriFarm Admin</div>
+    <div class="logo-sub">Secure Admin Access</div>
+  </div>
+
+  {% if error %}
+  <div class="error">⚠️ {{ error }}</div>
+  {% endif %}
+
+  <form method="post">
+    {% csrf_token %}
+    <div class="fgrp">
+      <label for="email">Admin Email</label>
+      <input type="email" id="email" name="email" placeholder="admin@AgriFarm.pk" required autofocus>
+    </div>
+    <div class="fgrp">
+      <label for="password">Password</label>
+      <input type="password" id="password" name="password" placeholder="••••••••" required>
+    </div>
+    <button type="submit" class="btn">🔐 Sign In to Admin Panel</button>
+  </form>
+
+  <hr class="divider">
+  <div class="back"><a href="/">← Back to AgriFarm</a></div>
+</div>
+</body>
+</html>

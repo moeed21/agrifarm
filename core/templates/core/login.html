@@ -1,0 +1,165 @@
+{% extends 'core/base.html' %}
+{% block title %}Login — AgriFarm{% endblock %}
+{% block extra_css %}
+<style>
+.auth-wrap{min-height:70vh;display:flex;align-items:center;justify-content:center;padding:32px 20px}
+.auth-box{background:#fff;border-radius:var(--r12);border:1px solid var(--border);box-shadow:var(--sh2);width:100%;max-width:440px;overflow:hidden}
+.auth-hd{background:var(--g800);padding:24px;text-align:center;border-bottom:3px solid var(--gold)}
+.auth-hd-icon{font-size:36px;margin-bottom:8px}
+.auth-hd-title{font-size:20px;font-weight:800;color:#fff}
+.auth-hd-sub{font-size:12px;color:var(--g300);margin-top:4px}
+.auth-tabs{display:flex;border-bottom:1px solid var(--border)}
+.auth-tab{flex:1;padding:12px;text-align:center;font-size:13px;font-weight:700;color:var(--muted);cursor:pointer;border-bottom:3px solid transparent;transition:all .15s}
+.auth-tab.active{color:var(--g700);border-bottom-color:var(--g700)}
+.auth-body{padding:24px}
+.role-selector{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px}
+.role-opt{border:2px solid var(--border);border-radius:var(--r8);padding:12px;text-align:center;cursor:pointer;transition:all .18s;position:relative}
+.role-opt.selected{border-color:var(--g600);background:var(--g50)}
+.role-opt#optBuyer:hover{border-color:#4285F4;background:#f0f6ff}
+.role-opt-icon{font-size:24px;margin-bottom:4px}
+.role-opt-title{font-size:12px;font-weight:700;color:var(--g800)}
+.role-opt-sub{font-size:10px;color:var(--muted);margin-top:2px}
+.auth-divider{display:flex;align-items:center;gap:10px;margin:16px 0;color:var(--muted);font-size:12px}
+.auth-divider::before,.auth-divider::after{content:'';flex:1;height:1px;background:var(--border)}
+.btn-google{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:11px 16px;border:1.5px solid var(--border);border-radius:var(--r6);background:#fff;color:var(--ink);font-size:14px;font-weight:600;cursor:pointer;transition:all .18s;text-decoration:none}
+.btn-google:hover{border-color:#4285F4;box-shadow:0 2px 8px rgba(66,133,244,.18);transform:translateY(-1px);color:var(--ink)}
+.btn-google svg{flex-shrink:0}
+/* Google block slide-in animation for register tab */
+.google-reg-block{overflow:hidden;max-height:0;opacity:0;transition:max-height .35s ease,opacity .28s ease,margin .28s ease;margin-top:0}
+.google-reg-block.visible{max-height:200px;opacity:1;margin-top:4px}
+</style>
+{% endblock %}
+{% block content %}
+<div class="auth-wrap">
+  <div class="auth-box">
+    <div class="auth-hd">
+      <div class="auth-hd-icon">🌾</div>
+      <div class="auth-hd-title">Welcome to AgriFarm</div>
+      <div class="auth-hd-sub">Pakistan's Farm-to-Buyer Marketplace</div>
+    </div>
+    <div class="auth-tabs">
+      <div class="auth-tab {% if tab != 'register' %}active{% endif %}" onclick="showTab('login')">Login</div>
+      <div class="auth-tab {% if tab == 'register' %}active{% endif %}" onclick="showTab('register')">Register Free</div>
+    </div>
+    {% if error %}<div class="alert alert-danger" style="margin:16px 16px 0"><span>{{ error }}</span></div>{% endif %}
+
+    <!-- LOGIN -->
+    <div id="loginForm" class="auth-body" {% if tab == 'register' %}style="display:none"{% endif %}>
+      <form method="post" action="{% url 'login' %}">{% csrf_token %}
+        <div class="fgrp"><label>Email Address</label><input type="email" name="email" class="finp" placeholder="your@email.com" required></div>
+        <div class="fgrp"><label>Password</label><input type="password" name="password" class="finp" placeholder="••••••••" required></div>
+        <button type="submit" class="btn btn-primary btn-block btn-lg" style="border-radius:var(--r6)">Login to AgriFarm</button>
+      </form>
+
+      <!-- Google Sign-In (Buyer only) -->
+      <div class="auth-divider">or sign in as Buyer</div>
+      <a href="{% url 'google_login' %}" class="btn-google">
+        <svg width="20" height="20" viewBox="0 0 48 48">
+          <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+          <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+          <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+          <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+        </svg>
+        Continue with Google
+      </a>
+      <div style="text-align:center;margin-top:12px;font-size:11px;color:var(--muted)">
+        📌 Google login creates a <strong>Buyer</strong> account automatically.
+      </div>
+      <div style="text-align:center;margin-top:10px;font-size:12px;color:var(--muted)">
+        Demo: <strong>seller@demo.com</strong> / <strong>buyer@demo.com</strong> — password: <strong>demo123</strong>
+      </div>
+    </div>
+
+    <!-- REGISTER -->
+    <div id="registerForm" class="auth-body" {% if tab != 'register' %}style="display:none"{% endif %}>
+      <form method="post" action="{% url 'register' %}">{% csrf_token %}
+        <div style="font-size:12px;font-weight:700;color:var(--g700);margin-bottom:10px;text-transform:uppercase;letter-spacing:.4px">I want to:</div>
+        <div class="role-selector" id="roleSelector">
+          <div class="role-opt selected" id="optSeller"
+               onclick="selectRole('seller')"
+               onmouseenter="previewRole('seller')"
+               onmouseleave="unpreviewRole()">
+            <div class="role-opt-icon">👨‍🌾</div>
+            <div class="role-opt-title">Sell Crops</div>
+            <div class="role-opt-sub">I'm a farmer</div>
+          </div>
+          <div class="role-opt" id="optBuyer"
+               onclick="selectRole('buyer')"
+               onmouseenter="previewRole('buyer')"
+               onmouseleave="unpreviewRole()">
+            <div class="role-opt-icon">🏪</div>
+            <div class="role-opt-title">Buy Crops</div>
+            <div class="role-opt-sub">I'm a buyer — skip the form →</div>
+          </div>
+        </div>
+        <input type="hidden" name="role" id="roleInput" value="seller">
+
+        <!-- Google quick-register — slides in when Buy Crops is hovered or selected -->
+        <div class="google-reg-block" id="googleRegBlock">
+          <div class="auth-divider" style="margin-top:0">or register instantly as Buyer</div>
+          <a href="{% url 'google_login' %}" class="btn-google">
+            <svg width="20" height="20" viewBox="0 0 48 48">
+              <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+              <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+              <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+              <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+            </svg>
+            Continue with Google
+          </a>
+          <div style="text-align:center;margin-top:8px;font-size:11px;color:var(--muted)">
+            ⚡ One tap — no password needed. Or fill the form below.
+          </div>
+        </div>
+
+        <div class="frow">
+          <div class="fgrp"><label>Full Name</label><input type="text" name="name" class="finp" placeholder="Ahmed Khan" required></div>
+          <div class="fgrp"><label>Phone</label><input type="tel" name="phone" class="finp" placeholder="03XX-XXXXXXX"></div>
+        </div>
+        <div class="fgrp"><label>Email Address</label><input type="email" name="email" class="finp" placeholder="your@email.com" required></div>
+        <div class="fgrp"><label>Password</label><input type="password" name="password" class="finp" placeholder="Min 6 characters" required></div>
+        <div class="fgrp"><label>City</label>
+          <select name="city" class="finp">{% for c in cities %}<option>{{ c }}</option>{% endfor %}</select>
+        </div>
+        <button type="submit" class="btn btn-gold btn-block btn-lg" style="border-radius:var(--r6)">Create Free Account</button>
+      </form>
+    </div>
+  </div>
+</div>
+<script>
+function showTab(tab) {
+  document.getElementById('loginForm').style.display = tab==='login' ? '' : 'none';
+  document.getElementById('registerForm').style.display = tab==='register' ? '' : 'none';
+  document.querySelectorAll('.auth-tab').forEach((t,i) => t.classList.toggle('active', (tab==='login' && i===0) || (tab==='register' && i===1)));
+}
+
+let _selectedRole = 'seller';
+
+function selectRole(role) {
+  _selectedRole = role;
+  document.getElementById('roleInput').value = role;
+  document.getElementById('optSeller').classList.toggle('selected', role==='seller');
+  document.getElementById('optBuyer').classList.toggle('selected', role==='buyer');
+  setGoogleBlock(role === 'buyer');
+}
+
+function previewRole(role) {
+  // Show Google block on hover preview — even before clicking
+  setGoogleBlock(role === 'buyer');
+}
+
+function unpreviewRole() {
+  // On mouse-leave, revert to what's actually selected
+  setGoogleBlock(_selectedRole === 'buyer');
+}
+
+function setGoogleBlock(show) {
+  document.getElementById('googleRegBlock').classList.toggle('visible', show);
+}
+
+// Pre-fill role from URL param (e.g. /login/?role=buyer)
+const urlRole = new URLSearchParams(window.location.search).get('role');
+if (urlRole) { selectRole(urlRole); showTab('register'); }
+
+
+</script>
+{% endblock %}

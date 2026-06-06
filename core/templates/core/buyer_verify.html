@@ -1,0 +1,72 @@
+{% extends 'core/buyer_base.html' %}
+{% load core_extras %}
+{% block title %}Verification — Buyer Dashboard · AgriFarm{% endblock %}
+{% block dash_css %}
+<style>
+.vf-card{background:#fff;border:1.5px solid var(--border);border-radius:var(--r16);overflow:hidden;margin-bottom:16px;box-shadow:var(--sh1)}
+.vf-card-hd{padding:16px 20px;display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--border)}
+.vf-num{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:14px;flex-shrink:0}
+.vf-num-done{background:var(--g500);color:#fff}
+.vf-num-pending{background:var(--g100);color:var(--muted);border:2px solid var(--border)}
+.vf-title{font-weight:800;font-size:15px;color:var(--g800)}
+.vf-sub{font-size:12px;color:var(--muted);margin-top:2px}
+.vf-body{padding:20px}
+
+.verified-chip{display:inline-flex;align-items:center;gap:5px;background:#f0fdf4;border:1.5px solid #86efac;color:#166534;font-size:12px;font-weight:700;padding:6px 14px;border-radius:20px}
+.otp-form-row{display:flex;gap:8px;align-items:center;margin-top:10px;flex-wrap:wrap}
+.otp-form-row .finp{flex:1;min-width:120px}
+
+.why-verify-box{background:linear-gradient(135deg,var(--g50),#fff);border:1.5px solid var(--g200);border-radius:var(--r12);padding:18px 22px;margin-bottom:22px}
+.why-item{display:flex;align-items:center;gap:10px;padding:6px 0;font-size:13px;color:var(--ink2)}
+.why-icon{width:28px;height:28px;border-radius:50%;background:var(--g100);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
+</style>
+{% endblock %}
+{% block dash_content %}
+<div class="dash-page-hd">
+  <div>
+    <div class="dash-page-title">🔐 Account Verification</div>
+    <div class="dash-page-sub">Verify your account to place orders on AgriFarm</div>
+  </div>
+</div>
+
+<!-- Why verify -->
+<div class="why-verify-box">
+  <div style="font-weight:800;font-size:13px;color:var(--g800);margin-bottom:10px">Why verify?</div>
+  <div class="why-item"><div class="why-icon">🛒</div> Required to place orders</div>
+  <div class="why-item"><div class="why-icon">🛡️</div> Protects your account from fraud</div>
+  <div class="why-item"><div class="why-icon">📦</div> Sellers can reach you about your orders</div>
+</div>
+
+<!-- Step 1: Email -->
+<div class="vf-card">
+  <div class="vf-card-hd">
+    <div class="vf-num {% if u.verified_email %}vf-num-done{% else %}vf-num-pending{% endif %}">
+      {% if u.verified_email %}✓{% else %}1{% endif %}
+    </div>
+    <div>
+      <div class="vf-title">📧 Email Address Verification</div>
+      <div class="vf-sub">Verify your email to receive order confirmations</div>
+    </div>
+  </div>
+  <div class="vf-body">
+    {% if u.verified_email %}
+      <div class="verified-chip">✅ Email Verified — {{ u.email }}</div>
+    {% else %}
+      <form method="post">{% csrf_token %}
+        <input type="hidden" name="action" value="send_email_otp">
+        <div class="otp-form-row">
+          <input type="email" class="finp" value="{{ u.email }}" disabled style="background:var(--g50)">
+          <button type="submit" class="btn btn-primary btn-sm">Send OTP</button>
+        </div>
+      </form>
+      <form method="post" style="margin-top:10px">{% csrf_token %}
+        <input type="hidden" name="action" value="verify_email">
+        <div class="otp-form-row">
+          <input type="text" name="email_otp" class="finp" placeholder="Enter 6-digit OTP (demo: 123456)" maxlength="6" inputmode="numeric">
+          <button type="submit" class="btn btn-outline btn-sm">Verify ›</button>
+        </div>
+      </form>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

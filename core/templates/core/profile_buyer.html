@@ -1,0 +1,187 @@
+{% extends 'core/base.html' %}
+{% block title %}Buyer Account{% endblock %}
+{% block extra_css %}
+<style>
+.dash{display:grid;grid-template-columns:230px 1fr;gap:20px;padding:24px 0 50px;align-items:start}
+.pnav{background:#fff;border:2px solid var(--border);border-radius:var(--r16);overflow:hidden;position:sticky;top:80px}
+.pnav-user{background:linear-gradient(135deg,var(--g800),var(--g600));padding:22px;text-align:center}
+.pnav-av{width:60px;height:60px;border-radius:50%;background:rgba(255,255,255,.2);border:3px solid rgba(255,255,255,.35);margin:0 auto 10px;display:flex;align-items:center;justify-content:center;font-family:var(--serif);font-size:22px;color:#fff;overflow:hidden}
+.pnav-av img{width:100%;height:100%;object-fit:cover}
+.pnav-name{font-weight:800;font-size:14px;color:#fff}
+.pnav-link{display:flex;align-items:center;gap:10px;padding:11px 16px;font-size:13px;font-weight:700;color:var(--ink2);cursor:pointer;transition:all .15s;border-left:3px solid transparent;text-decoration:none}
+.pnav-link:hover,.pnav-link.on{background:var(--g50);color:var(--g700);border-left-color:var(--g500)}
+.stat-row{display:grid;grid-template-columns:repeat(3,1fr);gap:13px;margin-bottom:18px}
+.stat{background:#fff;border:2px solid var(--border);border-radius:var(--r16);padding:18px;text-align:center;border-top:4px solid}
+.stat-val{font-family:var(--serif);font-size:26px;color:var(--ink)}
+.stat-lbl{font-size:10px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.7px;margin-top:5px}
+.or{display:flex;align-items:center;gap:11px;padding:12px;background:var(--g50);border:2px solid var(--border);border-radius:var(--r10);margin-bottom:8px;transition:all .15s}
+.or:hover{border-color:var(--g300)}
+.vf-row{display:flex;align-items:flex-start;gap:14px;padding:14px;background:var(--g50);border:2px solid var(--border);border-radius:var(--r10);margin-bottom:10px}
+</style>
+{% endblock %}
+{% block content %}
+<div class="wrap"><div class="dash">
+  <aside>
+    <div class="pnav">
+      <div class="pnav-user">
+        <div class="pnav-av">{% if u.avatar %}<img src="{{ u.avatar.url }}" alt="{{ u.name }}">{% else %}{{ u.name|slice:":1" }}{% endif %}</div>
+        <div class="pnav-name">{{ u.name }}</div>
+        <div style="font-size:11px;color:rgba(255,255,255,.6);margin-top:2px">🛒 Buyer
+          {% if u.verified_phone or u.verified_email %}<span style="background:rgba(58,170,85,.3);border:1px solid rgba(58,170,85,.5);border-radius:10px;padding:2px 8px;font-size:9px;font-weight:800;margin-left:6px">✅ VERIFIED</span>{% endif %}
+        </div>
+      </div>
+      <div style="padding:8px 0">
+        <a href="#overview" class="pnav-link on">📊 Overview</a>
+        <a href="#verify" class="pnav-link">🔐 Verification</a>
+        <a href="#orders" class="pnav-link">📋 My Orders</a>
+        <a href="#profile" class="pnav-link">⚙️ Edit Profile</a>
+        <a href="{% url 'analysis' %}" class="pnav-link">📊 Price Insights</a>
+        <a href="{% url 'marketplace' %}" class="pnav-link">🛒 Marketplace</a>
+      </div>
+    </div>
+    <a href="{% url 'logout' %}" class="btn btn-outline btn-block btn-sm" style="margin-top:10px;justify-content:center">🚪 Logout</a>
+  </aside>
+
+  <div>
+    {% if msg %}<div class="alert {% if '✅' in msg %}alert-success{% elif '❌' in msg %}alert-danger{% else %}alert-info{% endif %}" style="margin-bottom:16px"><span class="alert-icon">{% if '✅' in msg %}✅{% elif '❌' in msg %}❌{% else %}📱{% endif %}</span><span class="alert-msg">{{ msg|safe }}</span></div>{% endif %}
+
+    <!-- Stats -->
+    <div id="overview" class="stat-row">
+      <div class="stat" style="border-top-color:var(--g400)"><div class="stat-val">{{ orders|length }}</div><div class="stat-lbl">Total Orders</div></div>
+      <div class="stat" style="border-top-color:var(--blue)">
+        <div class="stat-val">{% if u.verified_phone or u.verified_email %}✅{% else %}⏳{% endif %}</div>
+        <div class="stat-lbl">Verification</div></div>
+      <div class="stat" style="border-top-color:var(--gold)"><div class="stat-val">{{ u.city }}</div><div class="stat-lbl">Your City</div></div>
+    </div>
+
+    <!-- Verification -->
+    <div id="verify" class="card" style="margin-bottom:16px">
+      <div class="card-hd">🔐 Account Verification — Required Before Ordering</div>
+      <div class="card-bd">
+        <!-- Phone OTP -->
+        <div class="vf-row">
+          <div style="width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:13px;flex-shrink:0;background:{% if u.verified_phone %}var(--g500){% else %}var(--border){% endif %};color:{% if u.verified_phone %}#fff{% else %}var(--muted){% endif %}">{% if u.verified_phone %}✓{% else %}1{% endif %}</div>
+          <div style="flex:1">
+            <div style="font-weight:800;font-size:13.5px">Phone Number OTP</div>
+            <div style="font-size:12px;color:var(--muted);margin-top:2px">Verify your mobile number via SMS</div>
+            {% if not u.verified_phone %}
+            <form method="post" style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">{% csrf_token %}
+              <input type="hidden" name="action" value="send_phone_otp">
+              <input type="tel" name="phone" class="finp" style="flex:1;width:auto" value="{{ u.phone }}" placeholder="03XX-XXXXXXX">
+              <button type="submit" class="btn btn-primary btn-sm">Send OTP</button>
+            </form>
+            <form method="post" style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">{% csrf_token %}
+              <input type="hidden" name="action" value="verify_phone">
+              <input type="text" name="otp" class="finp" style="flex:1;width:auto" placeholder="Enter OTP (demo: 123456)" maxlength="6">
+              <button type="submit" class="btn btn-outline btn-sm">Verify</button>
+            </form>{% else %}<div class="verified-chip" style="margin-top:8px">✅ Phone Verified — {{ u.phone }}</div>{% endif %}
+          </div>
+        </div>
+        <!-- Email OTP -->
+        <div class="vf-row">
+          <div style="width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:13px;flex-shrink:0;background:{% if u.verified_email %}var(--g500){% else %}var(--border){% endif %};color:{% if u.verified_email %}#fff{% else %}var(--muted){% endif %}">{% if u.verified_email %}✓{% else %}2{% endif %}</div>
+          <div style="flex:1">
+            <div style="font-weight:800;font-size:13.5px">Email Address OTP</div>
+            <div style="font-size:12px;color:var(--muted);margin-top:2px">Verify your email address</div>
+            {% if not u.verified_email %}
+            <form method="post" style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">{% csrf_token %}
+              <input type="hidden" name="action" value="send_email_otp">
+              <input type="email" name="email" class="finp" style="flex:1;width:auto" value="{{ u.email }}" placeholder="you@email.com">
+              <button type="submit" class="btn btn-primary btn-sm">Send OTP</button>
+            </form>
+            <form method="post" style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">{% csrf_token %}
+              <input type="hidden" name="action" value="verify_email">
+              <input type="text" name="email_otp" class="finp" style="flex:1;width:auto" placeholder="Enter OTP (demo: 123456)" maxlength="6">
+              <button type="submit" class="btn btn-outline btn-sm">Verify</button>
+            </form>{% else %}<div class="verified-chip" style="margin-top:8px">✅ Email Verified — {{ u.email }}</div>{% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Orders -->
+    <div id="orders" class="card" style="margin-bottom:16px">
+      <div class="card-hd">📋 My Orders ({{ orders|length }})</div>
+      <div class="card-bd">
+        {% for o in orders %}
+        <div class="or">
+          <div style="flex:1">
+            <div style="font-weight:800;font-size:13px">{{ o.crop }} — {{ o.city }}</div>
+            <div style="font-size:11px;color:var(--muted);margin-top:3px">📦 {{ o.qty }}kg · 💳 {{ o.pay_method }} · 📅 {{ o.date }}</div>
+            <div style="font-size:10px;color:var(--muted);font-family:monospace;margin-top:2px">{{ o.id }}</div>
+          </div>
+          <div style="text-align:right;margin-right:8px">
+            <div style="font-family:var(--serif);font-size:17px;color:var(--g700)">{{ o.total|floatformat:0 }} PKR</div>
+            <span class="badge badge-{{ o.status }}">{{ o.status|upper }}</span>
+          </div>
+          {% if o.status == 'pending' %}
+          <form method="post" style="flex-shrink:0">{% csrf_token %}
+            <input type="hidden" name="action" value="cancel_order">
+            <input type="hidden" name="order_id" value="{{ o.id }}">
+            <button type="submit" class="btn btn-danger btn-sm" style="font-size:11px;padding:5px 10px" onclick="return confirm('Cancel this order?')">Cancel</button>
+          </form>{% endif %}
+        </div>
+        {% empty %}
+        <div style="text-align:center;padding:36px;color:var(--muted)">
+          <div style="font-size:44px;margin-bottom:10px">🛒</div>
+          <div style="font-family:var(--serif);font-size:18px">No orders yet</div>
+          <a href="{% url 'marketplace' %}" class="btn btn-primary btn-sm" style="margin-top:14px;display:inline-flex">Browse Marketplace</a>
+        </div>{% endfor %}
+      </div>
+    </div>
+
+    <!-- Edit Profile -->
+    <div id="profile" class="card">
+      <div class="card-hd">⚙️ Edit Profile</div>
+      <div class="card-bd">
+        <form method="post" enctype="multipart/form-data">{% csrf_token %}
+          <input type="hidden" name="action" value="save_profile">
+          <div class="fgrp" style="display:flex;align-items:center;gap:16px;margin-bottom:18px">
+            {% if u.avatar %}
+              <img src="{{ u.avatar.url }}" style="width:72px;height:72px;border-radius:50%;object-fit:cover;border:3px solid var(--g300)" id="avatarPreview">
+            {% else %}
+              <div id="avatarPreview" style="width:72px;height:72px;border-radius:50%;background:var(--g400);display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:900;color:#fff">{{ u.name|slice:":1" }}</div>
+            {% endif %}
+            <div>
+              <label style="display:inline-block;cursor:pointer;background:var(--g50);border:2px solid var(--g200);border-radius:var(--r10);padding:8px 14px;font-size:12px;font-weight:700;color:var(--g700)">
+                📷 Change Photo
+                <input type="file" name="avatar" accept="image/*" style="display:none" onchange="previewAvatar(this)">
+              </label>
+              <div class="finp-hint" style="margin-top:5px">JPG/PNG, max 3MB</div>
+            </div>
+          </div>
+          <div class="frow">
+            <div class="fgrp"><label>Full Name</label><input type="text" name="name" class="finp" value="{{ u.name }}"></div>
+            <div class="fgrp"><label>Phone</label><input type="tel" name="phone" class="finp" value="{{ u.phone|default:'' }}"></div>
+          </div>
+          <div class="fgrp"><label>City</label><select name="city" class="finp">{% for c in cities %}<option {% if c == u.city %}selected{% endif %}>{{ c }}</option>{% endfor %}</select></div>
+          <button type="submit" class="btn btn-primary">💾 Save Profile</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div></div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function previewAvatar(input) {
+  if (input.files && input.files[0]) {
+    const reader = new FileReader();
+    reader.onload = e => {
+      const el = document.getElementById('avatarPreview');
+      if (el.tagName === 'IMG') {
+        el.src = e.target.result;
+      } else {
+        const img = document.createElement('img');
+        img.src = e.target.result;
+        img.id = 'avatarPreview';
+        img.style.cssText = 'width:72px;height:72px;border-radius:50%;object-fit:cover;border:3px solid var(--g300)';
+        el.replaceWith(img);
+      }
+    };
+    reader.readAsDataURL(input.files[0]);
+  }
+}
+</script>
+{% endblock %}

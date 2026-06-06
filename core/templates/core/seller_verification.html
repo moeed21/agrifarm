@@ -1,0 +1,166 @@
+{% extends 'core/seller_base.html' %}
+{% load core_extras %}
+{% block title %}Verification — Seller Dashboard{% endblock %}
+{% block dash_css %}
+<style>
+.vf-step{display:flex;align-items:flex-start;gap:14px;padding:16px;background:var(--g50);border:1.5px solid var(--border);border-radius:var(--r10);margin-bottom:12px}
+.vf-num{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:13px;flex-shrink:0}
+.vf-done{background:var(--g500);color:#fff}
+.vf-pending{background:var(--border);color:var(--muted)}
+.vf-title{font-weight:800;font-size:14px;color:var(--ink)}
+.vf-sub{font-size:12px;color:var(--muted);margin-top:3px}
+.cnic-upload-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:12px 0}
+.cnic-zone{border:2.5px dashed var(--border);border-radius:var(--r10);background:var(--g50);cursor:pointer;position:relative;overflow:hidden;min-height:130px;transition:all .2s}
+.cnic-zone:hover{border-color:var(--g400);background:#f0faf3}
+.cnic-zone.has-file{border-style:solid;border-color:var(--g400)}
+.cnic-zone-inner{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:18px;height:100%;gap:6px}
+.cnic-zone-icon{font-size:32px}
+.cnic-zone-lbl{font-size:12px;font-weight:800;color:var(--ink);text-align:center}
+.cnic-zone-hint{font-size:10px;color:var(--muted);text-align:center}
+.cnic-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.cnic-preview{width:100%;height:100%;object-fit:cover;border-radius:8px;display:block;position:absolute;inset:0}
+.cnic-badge-approved{display:inline-flex;align-items:center;gap:6px;background:#e8f8ee;border:1.5px solid #4caf7d;color:#1b6b3a;border-radius:20px;padding:5px 14px;font-size:12px;font-weight:800}
+.cnic-badge-rejected{display:inline-flex;align-items:center;gap:6px;background:#fff0f0;border:1.5px solid #f87171;color:#991b1b;border-radius:20px;padding:5px 14px;font-size:12px;font-weight:800}
+.cnic-badge-pending{display:inline-flex;align-items:center;gap:6px;background:#fffbeb;border:1.5px solid #f59e0b;color:#92400e;border-radius:20px;padding:5px 14px;font-size:12px;font-weight:800}
+.uploading-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;flex-direction:column;align-items:center;justify-content:center;z-index:9999}
+.uploading-spinner{width:52px;height:52px;border:5px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .8s linear infinite;margin-bottom:14px}
+@keyframes spin{to{transform:rotate(360deg)}}
+</style>
+{% endblock %}
+{% block dash_content %}
+<div class="dash-page-hd">
+  <div class="dash-page-title">🔐 Seller Verification</div>
+  <div class="dash-page-sub">Complete these steps to unlock full marketplace access</div>
+</div>
+
+<!-- Step 1: Email OTP -->
+<div class="vf-step">
+  <div class="vf-num {% if u.verified_email %}vf-done{% else %}vf-pending{% endif %}">{% if u.verified_email %}✓{% else %}1{% endif %}</div>
+  <div style="flex:1">
+    <div class="vf-title">📧 Email Verification</div>
+    <div class="vf-sub">Verify your email address via OTP</div>
+    {% if not u.verified_email %}
+    <form method="post" style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+      {% csrf_token %}<input type="hidden" name="action" value="send_otp">
+      <input type="email" class="finp" style="width:auto;flex:1" value="{{ u.email }}" disabled style="background:var(--g50)">
+      <button type="submit" class="btn btn-primary btn-sm">Send OTP</button>
+    </form>
+    <form method="post" style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
+      {% csrf_token %}<input type="hidden" name="action" value="verify_otp">
+      <input type="text" name="otp" class="finp" style="width:auto;flex:1" placeholder="Enter 6-digit OTP (demo: 123456)" maxlength="6">
+      <button type="submit" class="btn btn-outline btn-sm">Verify</button>
+    </form>
+    {% else %}<div style="margin-top:8px;color:var(--g600);font-weight:700">✅ Email Verified — {{ u.email }}</div>{% endif %}
+  </div>
+</div>
+
+<!-- Step 2: CNIC -->
+<div class="vf-step">
+  <div class="vf-num {% if u.cnic_verified == 'approved' %}vf-done{% else %}vf-pending{% endif %}">{% if u.cnic_verified == 'approved' %}✓{% else %}2{% endif %}</div>
+  <div style="flex:1">
+    <div class="vf-title">CNIC / National ID Verification</div>
+    <div class="vf-sub">Upload clear photos of both sides of your CNIC</div>
+    <div style="margin:10px 0">
+      {% if u.cnic_verified == 'approved' %}<span class="cnic-badge-approved">✅ CNIC Verified</span>
+      {% elif u.cnic_verified == 'rejected' %}<span class="cnic-badge-rejected">❌ Rejected — Re-upload required</span>
+      {% elif u.cnic_verified == 'pending' %}<span class="cnic-badge-pending">⏳ Pending Review</span>
+      {% else %}<span style="font-size:11px;color:var(--muted)">Not submitted yet</span>{% endif %}
+    </div>
+    <form method="post" style="margin-bottom:10px">{% csrf_token %}
+      <input type="hidden" name="action" value="save_profile">
+      <div class="frow">
+        <div class="fgrp"><label>CNIC Number</label><input type="text" name="cnic" class="finp" value="{{ u.cnic|default:'' }}" placeholder="35202-1234567-1"></div>
+        <div class="fgrp"><label>Name on CNIC</label><input type="text" name="cnic_name" class="finp" value="{{ u.cnic_name|default:'' }}"></div>
+      </div>
+      <button type="submit" class="btn btn-outline btn-sm">💾 Save CNIC Number</button>
+    </form>
+    {% if u.cnic_verified != 'approved' %}
+    <form method="post" enctype="multipart/form-data" id="cnicUploadForm">{% csrf_token %}
+      <input type="hidden" name="action" value="upload_cnic_docs">
+      <div style="font-size:12px;font-weight:700;margin-bottom:8px">📸 Upload CNIC Photos</div>
+      <div class="cnic-upload-grid">
+        <div>
+          <div style="font-size:11px;font-weight:800;color:var(--g700);margin-bottom:5px">FRONT SIDE</div>
+          <label class="cnic-zone" id="frontZone" for="cnicFrontInput">
+            <div class="cnic-zone-inner" id="frontInner">
+              <div class="cnic-zone-icon">🪪</div>
+              <div class="cnic-zone-lbl">Click or drag here</div>
+              <div class="cnic-zone-hint">Shows your photo & CNIC number</div>
+            </div>
+            {% if u.cnic_front %}<img src="{{ u.cnic_front }}" class="cnic-preview" id="frontPreviewImg" alt="Front">{% endif %}
+            <input type="file" id="cnicFrontInput" name="cnic_front" accept="image/*" required>
+          </label>
+        </div>
+        <div>
+          <div style="font-size:11px;font-weight:800;color:var(--g700);margin-bottom:5px">BACK SIDE</div>
+          <label class="cnic-zone" id="backZone" for="cnicBackInput">
+            <div class="cnic-zone-inner" id="backInner">
+              <div class="cnic-zone-icon">📋</div>
+              <div class="cnic-zone-lbl">Click or drag here</div>
+              <div class="cnic-zone-hint">Shows your address & barcode</div>
+            </div>
+            {% if u.cnic_back %}<img src="{{ u.cnic_back }}" class="cnic-preview" id="backPreviewImg" alt="Back">{% endif %}
+            <input type="file" id="cnicBackInput" name="cnic_back" accept="image/*" required>
+          </label>
+        </div>
+      </div>
+      <button type="submit" class="btn btn-primary" onclick="showVerifyingOverlay()">📋 Submit for Verification</button>
+    </form>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Step 3: Payment -->
+<div class="vf-step">
+  <div class="vf-num {% if u.bank_iban %}vf-done{% else %}vf-pending{% endif %}">{% if u.bank_iban %}✓{% else %}3{% endif %}</div>
+  <div style="flex:1">
+    <div class="vf-title">Payment Accounts</div>
+    <div class="vf-sub">Add bank account & mobile wallets to receive payments</div>
+    <form method="post" style="margin-top:12px">{% csrf_token %}
+      <input type="hidden" name="action" value="save_profile">
+      <div class="frow">
+        <div class="fgrp"><label>IBAN (Bank)</label><input type="text" name="bank_iban" class="finp" value="{{ u.bank_iban|default:'' }}" placeholder="PK36HABB0000001123456702"></div>
+        <div class="fgrp"><label>Bank Name</label><select name="bank_name" class="finp"><option>HBL</option><option>MCB</option><option>UBL</option><option>Meezan</option><option>Allied</option></select></div>
+      </div>
+      <div class="frow">
+        <div class="fgrp"><label>Account Title</label><input type="text" name="bank_title" class="finp" value="{{ u.bank_title|default:'' }}"></div>
+        <div class="fgrp"><label>JazzCash #</label><input type="tel" name="jazzcash" class="finp" value="{{ u.jazzcash|default:'' }}" placeholder="03XX-XXXXXXX"></div>
+      </div>
+      <div class="fgrp"><label>EasyPaisa #</label><input type="tel" name="easypaisa" class="finp" value="{{ u.easypaisa|default:'' }}" placeholder="03XX-XXXXXXX"></div>
+      <button type="submit" class="btn btn-primary btn-sm">Save Payment Details</button>
+    </form>
+  </div>
+</div>
+
+<div class="uploading-overlay" id="verifyingOverlay" style="display:none">
+  <div class="uploading-spinner"></div>
+  <div style="color:#fff;font-weight:800;font-size:15px">⏳ Submitting documents…</div>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script>
+function showVerifyingOverlay(){
+  const f=document.getElementById('cnicFrontInput'),b=document.getElementById('cnicBackInput');
+  if(f&&f.files.length===0)return;if(b&&b.files.length===0)return;
+  const o=document.getElementById('verifyingOverlay');if(o)o.style.display='flex';
+}
+function setupCnicZone(inputId,zoneId,innerId,existingImgId){
+  const input=document.getElementById(inputId),zone=document.getElementById(zoneId),inner=document.getElementById(innerId);
+  if(!input)return;
+  function showPreview(file){
+    const reader=new FileReader();
+    reader.onload=e=>{
+      inner.style.display='none';
+      const existing=document.getElementById(existingImgId);
+      if(existing)existing.style.display='none';
+      let img=zone.querySelector('.cnic-preview-js');
+      if(!img){img=document.createElement('img');img.className='cnic-preview cnic-preview-js';zone.appendChild(img);}
+      img.src=e.target.result;zone.classList.add('has-file');
+    };reader.readAsDataURL(file);
+  }
+  input.addEventListener('change',()=>{if(input.files&&input.files[0])showPreview(input.files[0]);});
+}
+setupCnicZone('cnicFrontInput','frontZone','frontInner','frontPreviewImg');
+setupCnicZone('cnicBackInput','backZone','backInner','backPreviewImg');
+</script>
+{% endblock %}

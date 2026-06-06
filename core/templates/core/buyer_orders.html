@@ -1,0 +1,103 @@
+{% extends 'core/buyer_base.html' %}
+{% load core_extras %}
+{% block title %}My Orders — Buyer Dashboard · AgriFarm{% endblock %}
+{% block dash_css %}
+<style>
+.order-card{background:#fff;border:1.5px solid var(--border);border-radius:var(--r14);margin-bottom:12px;overflow:hidden;transition:all .2s}
+.order-card:hover{border-color:var(--g300);box-shadow:0 4px 16px rgba(0,0,0,.08)}
+.order-card-body{display:flex;align-items:flex-start;gap:16px;padding:18px 20px}
+.order-emoji-box{width:52px;height:52px;border-radius:var(--r10);background:var(--g50);display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0;border:1.5px solid var(--border)}
+.order-id-code{font-family:monospace;font-size:10px;background:var(--g50);color:var(--g700);padding:2px 8px;border-radius:6px;border:1px solid var(--g200);font-weight:700;margin-top:4px;display:inline-block}
+.order-card-foot{background:var(--g50);border-top:1px solid var(--border);padding:10px 20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
+
+.badge{display:inline-flex;align-items:center;padding:4px 10px;border-radius:20px;font-size:10px;font-weight:800;letter-spacing:.3px}
+.badge-pending{background:#fef3c7;color:#b45309;border:1px solid #fde68a}
+.badge-confirmed{background:#d1fae5;color:#065f46;border:1px solid #a7f3d0}
+.badge-delivered{background:#dbeafe;color:#1e40af;border:1px solid #bfdbfe}
+.badge-cancelled{background:#fee2e2;color:#991b1b;border:1px solid #fca5a5}
+
+.orders-summary{background:linear-gradient(135deg,var(--g900),var(--g700));border-radius:var(--r14);padding:18px 22px;display:flex;gap:24px;flex-wrap:wrap;margin-bottom:22px}
+.os-stat{text-align:center}
+.os-val{font-size:20px;font-weight:900;color:#fff;font-family:var(--serif)}
+.os-lbl{font-size:10px;color:rgba(255,255,255,.55);text-transform:uppercase;letter-spacing:.7px;margin-top:2px}
+.os-div{width:1px;background:rgba(255,255,255,.15);align-self:stretch}
+</style>
+{% endblock %}
+{% block dash_content %}
+<div class="dash-page-hd">
+  <div>
+    <div class="dash-page-title">📋 My Orders</div>
+    <div class="dash-page-sub">{{ orders|length }} total order{{ orders|length|pluralize }}</div>
+  </div>
+  <a href="{% url 'marketplace' %}" class="btn btn-primary btn-sm">🛒 Shop More</a>
+</div>
+
+<!-- Summary bar -->
+{% if orders %}
+<div class="orders-summary">
+  <div class="os-stat">
+    <div class="os-val">{{ orders|length }}</div>
+    <div class="os-lbl">Total Orders</div>
+  </div>
+  <div class="os-div"></div>
+  <div class="os-stat">
+    <div class="os-val">{{ orders|length }}</div>
+    <div class="os-lbl">Active</div>
+  </div>
+  <div class="os-div"></div>
+  <div class="os-stat">
+    <div class="os-val">PKR</div>
+    <div class="os-lbl">Total Spent</div>
+  </div>
+</div>
+{% endif %}
+
+<!-- Orders list -->
+{% for o in orders %}
+<div class="order-card">
+  <div class="order-card-body">
+    <div class="order-emoji-box">🌾</div>
+    <div style="flex:1;min-width:0">
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px">
+        <div style="font-weight:800;font-size:15px;color:var(--g800)">{{ o.crop }}</div>
+        <span class="badge badge-{{ o.status }}">{{ o.status|upper }}</span>
+      </div>
+      <div style="font-size:12.5px;color:var(--muted);line-height:1.7">
+        📍 {{ o.city }}{% if o.market %} · {{ o.market }}{% endif %}<br>
+        📦 <strong>{{ o.qty }} kg</strong> &nbsp;·&nbsp; 💳 {{ o.pay_method|upper }} &nbsp;·&nbsp; 📅 {{ o.date }}
+      </div>
+      <div class="order-id-code">{{ o.id }}</div>
+    </div>
+    <div style="text-align:right;flex-shrink:0">
+      <div style="font-family:var(--serif);font-size:22px;font-weight:900;color:var(--g700)">{{ o.total }}</div>
+      <div style="font-size:11px;color:var(--muted)">PKR</div>
+    </div>
+  </div>
+  <div class="order-card-foot">
+    <div style="font-size:12px;color:var(--muted)">
+      Seller: <strong>{{ o.seller }}</strong>
+      &nbsp;·&nbsp; {{ o.price }} PKR/kg
+    </div>
+    <div style="display:flex;gap:8px">
+      {% if o.status == 'pending' %}
+      <form method="post">{% csrf_token %}
+        <input type="hidden" name="action" value="cancel_order">
+        <input type="hidden" name="order_id" value="{{ o.id }}">
+        <button type="submit" class="btn btn-sm" style="background:#fff1f2;color:#dc2626;border:1.5px solid #fca5a5;font-size:11px;padding:5px 12px" onclick="return confirm('Cancel this order?')">✕ Cancel</button>
+      </form>
+      {% endif %}
+      {% if o.listing_id %}
+      <a href="{% url 'listing_detail' o.listing_id %}" class="btn btn-sm btn-outline" style="font-size:11px;padding:5px 12px">View Listing →</a>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% empty %}
+<div style="text-align:center;padding:60px 24px;background:#fff;border:2px dashed var(--border);border-radius:var(--r16)">
+  <div style="font-size:56px;margin-bottom:14px">🛒</div>
+  <div style="font-size:19px;font-weight:800;color:var(--g800);margin-bottom:6px">No orders yet</div>
+  <div style="font-size:13px;color:var(--muted);margin-bottom:22px">Start exploring fresh crops from verified farmers across Pakistan</div>
+  <a href="{% url 'marketplace' %}" class="btn btn-primary">🌿 Browse Marketplace</a>
+</div>
+{% endfor %}
+{% endblock %}

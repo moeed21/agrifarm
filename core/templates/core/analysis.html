@@ -1,0 +1,733 @@
+{% extends 'core/base.html' %}
+{% load core_extras %}
+{% block title %}AI Analysis — {{ crop }} · {{ city }}{% endblock %}
+{% block extra_css %}
+<style>
+/* ANALYSIS HERO */
+.an-hero{background:var(--g900);padding:36px 0 0;border-bottom:3px solid rgba(255,255,255,.06)}
+.an-tag{display:inline-flex;align-items:center;gap:6px;background:var(--gold);color:var(--g900);font-size:10px;font-weight:700;padding:5px 14px;border-radius:20px;letter-spacing:.5px;margin-bottom:16px}
+.an-title{font-family:var(--serif);font-size:32px;font-weight:700;color:#fff;margin-bottom:6px;line-height:1.2}
+.an-sub{font-size:13px;color:rgba(255,255,255,.4);margin-bottom:22px}
+
+/* SELECTOR BAR */
+.sel-bar{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;padding-bottom:24px}
+.sel-g{display:flex;flex-direction:column;gap:4px}
+.sel-lbl{font-size:10px;font-weight:700;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.7px;display:flex;align-items:center;gap:4px}
+.sel-inp{border:1.5px solid rgba(255,255,255,.12);border-radius:var(--r8);padding:10px 14px;font-size:13px;color:#fff;background:rgba(255,255,255,.06);min-width:130px;cursor:pointer;transition:all .15s}
+.sel-inp:focus{border-color:var(--g400);outline:none;background:rgba(255,255,255,.1)}
+.sel-inp option{color:var(--ink);background:#fff}
+.btn-analyze{background:var(--gold);color:var(--g900);border:none;padding:10px 26px;font-weight:700;font-size:14px;border-radius:var(--r8);height:44px;align-self:flex-end;cursor:pointer;display:flex;align-items:center;gap:8px;transition:all .15s}
+.btn-analyze:hover{background:var(--gold2);transform:translateY(-1px)}
+
+/* DATA STRIP */
+.ds-strip{background:rgba(255,255,255,.04);border-top:1px solid rgba(255,255,255,.06);padding:8px 0}
+.ds-i{display:flex;gap:20px;flex-wrap:wrap;align-items:center}
+.ds-pill{display:flex;align-items:center;gap:6px;font-size:11px;color:rgba(255,255,255,.5)}
+.ds-dot{width:7px;height:7px;border-radius:50%;background:var(--g400)}
+.ds-dot-blue{background:#63b3ed}
+.ds-dot-gold{background:var(--gold)}
+
+/* RESULTS AREA */
+.results{padding:28px 0 60px;background:var(--bg)}
+
+/* KPI CARDS */
+.kpi-row{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:20px}
+.kpi{background:#fff;border-radius:var(--r12);border:1px solid var(--border);padding:18px;text-align:center;box-shadow:var(--sh1);transition:all .2s;cursor:default}
+.kpi:hover{border-color:var(--g300);box-shadow:var(--sh2);transform:translateY(-2px)}
+.kpi.kpi-active{border:2px solid var(--g400);background:var(--g50)}
+.kpi-icon{font-size:26px;margin-bottom:8px}
+.kpi-val{font-size:22px;font-weight:700;color:var(--ink);line-height:1.1}
+.kpi-lbl{font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-top:4px}
+.kpi-sub{font-size:11px;font-weight:600;margin-top:5px}
+.up{color:var(--red)}.dn{color:var(--g500)}.flat{color:var(--gold)}
+
+/* VERDICT BOX */
+.verdict-box{border-radius:var(--r12);padding:24px 28px;margin-bottom:20px;display:grid;grid-template-columns:auto 1fr auto;gap:24px;align-items:center;border:1.5px solid}
+.vb-buy{background:#f0fdf4;border-color:var(--g300)}
+.vb-wait{background:#fffbeb;border-color:var(--gold)}
+.vb-avoid{background:#fef2f2;border-color:var(--red)}
+.v-icon{font-size:52px;line-height:1}
+.v-title{font-size:22px;font-weight:700;color:var(--ink);line-height:1.2;margin-bottom:4px}
+.v-reason{font-size:13px;color:var(--muted);line-height:1.65;max-width:560px}
+.v-conf{text-align:center;min-width:110px}
+.v-conf-lbl{font-size:9px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.7px}
+.v-conf-num{font-size:32px;font-weight:700;color:var(--g700);line-height:1.1}
+.v-conf-word{font-size:11px;color:var(--muted);margin-top:2px}
+.v-conf-bar{height:6px;background:var(--g100);border-radius:3px;overflow:hidden;margin-top:6px}
+.v-conf-fill{height:100%;background:var(--g500);border-radius:3px}
+
+/* WEATHER LIVE STRIP */
+.weather-strip{background:#fff;border-radius:var(--r12);border:1px solid var(--border);padding:16px 20px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px}
+.wx-left{display:flex;align-items:center;gap:12px}
+.wx-icon-wrap{font-size:28px}
+.wx-city{font-size:14px;font-weight:700;color:var(--ink)}
+.wx-date{font-size:11px;color:var(--muted)}
+.wx-metrics{display:flex;gap:24px}
+.wx-m{text-align:center}
+.wx-m-val{font-size:18px;font-weight:700}
+.wx-m-lbl{font-size:10px;color:var(--muted);font-weight:600}
+.wx-m-hot{color:#e53e3e}
+.wx-m-cold{color:var(--blue)}
+.wx-m-rain{color:#3182ce}
+.wx-m-humid{color:#805ad5}
+.wx-source{font-size:10px;color:var(--muted);display:flex;align-items:center;gap:4px}
+
+/* CHART CARDS */
+.chart-row{display:grid;grid-template-columns:3fr 2fr;gap:14px;margin-bottom:14px}
+.chart-card{background:#fff;border-radius:var(--r12);border:1px solid var(--border);box-shadow:var(--sh1);overflow:hidden}
+.cc-hd{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.cc-title{font-size:13px;font-weight:700;color:var(--ink)}
+.cc-sub{font-size:11px;color:var(--muted);margin-top:2px}
+.cc-bd{padding:16px}
+
+/* 6-MONTH FORECAST TIMELINE */
+.forecast-card{background:#fff;border-radius:var(--r12);border:1px solid var(--border);box-shadow:var(--sh1);margin-bottom:14px;overflow:hidden}
+.fc-hd{background:var(--g850);padding:14px 20px;display:flex;align-items:center;justify-content:space-between}
+.fc-hd-title{font-size:13px;font-weight:700;color:#fff}
+.fc-hd-sub{font-size:11px;color:rgba(255,255,255,.5)}
+.fc-grid{display:grid;grid-template-columns:repeat(6,1fr)}
+.mc{padding:16px 10px;text-align:center;border-right:1px solid var(--border);position:relative;transition:background .15s}
+.mc:last-child{border-right:none}
+.mc:hover{background:var(--g50)}
+.mc.best-month{background:#fffde7;border-bottom:3px solid var(--gold)}
+.mc.risky-month{background:#fef2f2;border-bottom:3px solid var(--red)}
+.mc-month{font-size:12px;font-weight:700;color:var(--g800);margin-bottom:8px}
+.mc-best-tag{position:absolute;top:5px;left:50%;transform:translateX(-50%);background:var(--gold);color:var(--g900);font-size:8px;font-weight:700;padding:2px 8px;border-radius:10px;white-space:nowrap}
+.mc-risk-tag{position:absolute;top:5px;left:50%;transform:translateX(-50%);background:var(--red);color:#fff;font-size:8px;font-weight:700;padding:2px 8px;border-radius:10px;white-space:nowrap}
+.mc-weather-icon{font-size:20px;margin-bottom:4px}
+.mc-price{font-size:20px;font-weight:700;color:var(--g700);line-height:1}
+.mc-unit{font-size:9px;color:var(--muted);font-weight:600}
+.mc-temp{font-size:10px;color:var(--muted);margin-top:4px}
+.mc-rain{font-size:10px;font-weight:600;margin-top:2px}
+.mc-rain-low{color:var(--g500)}.mc-rain-med{color:var(--blue)}.mc-rain-high{color:var(--red)}
+.mc-wsi{height:4px;background:var(--border);border-radius:2px;margin-top:6px;overflow:hidden}
+.mc-wsi-fill{height:100%;border-radius:2px}
+.mc-alerts{margin-top:6px}
+.mc-alert-chip{font-size:8px;font-weight:700;padding:2px 5px;border-radius:3px;display:inline-block;margin:1px}
+.mca-flood{background:#fef2f2;color:var(--red)}.mca-drought{background:#fff7ed;color:#c2410c}
+.mca-heat{background:#fff7ed;color:#c2410c}.mca-ideal{background:var(--g100);color:var(--g700)}
+.fc-legend{display:flex;gap:16px;flex-wrap:wrap;padding:10px 18px;background:var(--g50);border-top:1px solid var(--border);font-size:11px;color:var(--muted)}
+.fc-legend-item{display:flex;align-items:center;gap:5px}
+.fc-legend-dot{width:10px;height:10px;border-radius:2px}
+
+/* BOTTOM GRID */
+.bottom-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+
+/* MANDI PRICES */
+.mandi-item{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:var(--g50);border:1px solid var(--border);border-radius:var(--r8);margin-bottom:8px;transition:all .15s}
+.mandi-item:hover{border-color:var(--g300);background:var(--g100)}
+.mandi-name{font-size:13px;font-weight:600;color:var(--ink)}
+.mandi-meta{font-size:11px;color:var(--muted);margin-top:2px}
+.mandi-price{font-size:18px;font-weight:700;color:var(--g700);text-align:right}
+.mandi-chg{font-size:10px;font-weight:600;margin-top:2px}
+
+/* AI SIGNALS */
+.sig-item{display:flex;gap:10px;padding:9px 0;border-bottom:1px solid var(--border);align-items:flex-start}
+.sig-item:last-child{border:none}
+.sig-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;margin-top:4px}
+.sig-dot.green{background:var(--g500)}.sig-dot.red{background:var(--red)}.sig-dot.amber{background:var(--gold)}.sig-dot.blue{background:var(--blue)}
+.sig-lbl{font-size:13px;font-weight:600;color:var(--ink)}
+.sig-det{font-size:11px;color:var(--muted);margin-top:1px}
+
+/* CITY COMPARISON */
+.city-cmp-item{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border)}
+.city-cmp-item:last-child{border:none}
+.city-rank{width:22px;height:22px;border-radius:50%;background:var(--g100);color:var(--g700);font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.city-name{font-size:13px;font-weight:600;color:var(--ink);flex:1}
+.city-price{font-size:14px;font-weight:700;color:var(--g700)}
+.city-bar{height:4px;background:var(--g100);border-radius:2px;flex:1;overflow:hidden}
+.city-bar-fill{height:100%;background:var(--g500);border-radius:2px}
+
+/* SIMPLE ACTION BANNER */
+.simple-banner{border-radius:var(--r12);padding:28px 32px;margin-bottom:20px;text-align:center;border:3px solid}
+.simple-banner-buy{background:#f0fdf4;border-color:#22c55e}
+.simple-banner-wait{background:#fffbeb;border-color:#f59e0b}
+.simple-banner-sell{background:#fef2f2;border-color:#ef4444}
+.simple-banner-icon{font-size:72px;line-height:1;margin-bottom:10px}
+.simple-banner-action{font-size:36px;font-weight:900;letter-spacing:1px;margin-bottom:8px}
+.simple-banner-buy .simple-banner-action{color:#15803d}
+.simple-banner-wait .simple-banner-action{color:#b45309}
+.simple-banner-sell .simple-banner-action{color:#dc2626}
+.simple-banner-desc{font-size:16px;color:#374151;font-weight:600;line-height:1.6;max-width:600px;margin:0 auto 10px}
+.simple-banner-tip{font-size:13px;color:#6b7280;font-style:italic}
+
+/* EXPLANATION BOXES */
+.explain-box{background:#fff;border:1.5px solid var(--border);border-radius:var(--r12);padding:16px 20px;margin-top:10px;margin-bottom:14px;display:flex;gap:14px;align-items:flex-start}
+.explain-icon{font-size:28px;flex-shrink:0;line-height:1;margin-top:2px}
+.explain-title{font-size:13px;font-weight:800;color:var(--g800);margin-bottom:4px}
+.explain-text{font-size:12.5px;color:var(--ink2);line-height:1.7}
+.explain-tip{display:inline-flex;align-items:center;gap:5px;background:var(--g50);border:1px solid var(--g200);color:var(--g700);font-size:11.5px;font-weight:700;padding:5px 12px;border-radius:20px;margin-top:8px}
+
+/* NO DATA */
+.no-data-box{text-align:center;padding:60px;background:#fff;border-radius:var(--r12);border:2px dashed var(--border)}
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- HERO SELECTOR -->
+<div class="an-hero">
+  <div class="wrap">
+    <div class="an-tag">🌾 AI FARMER INTELLIGENCE</div>
+    <div class="an-title">When Should You Sell? AI + Weather Tells You.</div>
+    <div class="an-sub">{{ info.rows|default:"107,290" }} real mandi records · AI model · 6-month weather forecast</div>
+    <form method="get" class="sel-bar">
+      <div class="sel-g">
+        <div class="sel-lbl">🌾 CROP</div>
+        <select name="crop" class="sel-inp">
+          {% for c in dataset_crops %}<option value="{{ c }}" {% if c == crop %}selected{% endif %}>{{ c }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="sel-g">
+        <div class="sel-lbl">📍 CITY</div>
+        <select name="city" class="sel-inp">
+          {% for c in cities %}<option value="{{ c }}" {% if c == city %}selected{% endif %}>{{ c }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="sel-g">
+        <div class="sel-lbl">👤 I AM A</div>
+        <select name="role" class="sel-inp">
+          <option value="buyer" {% if role == 'buyer' %}selected{% endif %}>🛒 Buyer</option>
+          <option value="seller" {% if role == 'seller' %}selected{% endif %}>👨‍🌾 Seller</option>
+        </select>
+      </div>
+      <button type="submit" class="btn-analyze">⚡ Analyze</button>
+    </form>
+    <div class="ds-strip">
+      <div class="ds-i">
+        <div class="ds-pill"><div class="ds-dot"></div> CSV: {{ info.rows|default:"107,290" }} rows · {{ info.date_from|default:"2023-01-03" }} → {{ info.date_to|default:"2025-10-30" }}</div>
+        <div class="ds-pill"><div class="ds-dot"></div> {{ info.markets|length|default:"13" }} real mandis · No hardcoded prices</div>
+        <div class="ds-pill"><div class="ds-dot ds-dot-blue"></div> Weather: 🌐 Open-Meteo (live) with PMD fallback</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- RESULTS -->
+<div class="results">
+  <div class="wrap">
+
+    <!-- KPI ROW -->
+    <div class="kpi-row">
+      <div class="kpi">
+        <div class="kpi-icon">💰</div>
+        <div class="kpi-val">{{ analysis.cur|default:"—" }}</div>
+        <div class="kpi-lbl">PKR / KG</div>
+        <div class="kpi-sub {% if analysis.m30 > 0 %}up{% elif analysis.m30 < 0 %}dn{% else %}flat{% endif %}">
+          {% if analysis.m30 > 0 %}▲ +{{ analysis.m30 }}%{% elif analysis.m30 < 0 %}▼ {{ analysis.m30 }}%{% else %}→ Stable{% endif %} vs last month
+        </div>
+      </div>
+      <div class="kpi {% if analysis.vc == 'buy' %}kpi-active{% endif %}">
+        <div class="kpi-icon">{% if analysis.vc == 'buy' %}✅{% elif analysis.vc == 'wait' %}⏳{% else %}🚫{% endif %}</div>
+        <div class="kpi-val" style="font-size:13px;line-height:1.3">{{ analysis.verdict|default:"—"|truncatechars:18 }}</div>
+        <div class="kpi-lbl">AI VERDICT</div>
+        <div class="kpi-sub flat">{{ analysis.conf|default:"—" }}% conf.</div>
+      </div>
+      <div class="kpi kpi-active">
+        <div class="kpi-icon">📅</div>
+        <div class="kpi-val" style="font-size:16px">{{ analysis.best_month|default:"—" }}</div>
+        <div class="kpi-lbl">BEST MONTH</div>
+        {% with best_idx=forecast.best_month %}
+        <div class="kpi-sub dn">{{ best_idx.adjusted_price|default:"—" }} PKR/kg</div>
+        {% endwith %}
+      </div>
+      <div class="kpi">
+        <div class="kpi-icon">🏆</div>
+        <div class="kpi-val" style="font-size:16px">{{ forecast.best_city.city|default:"—" }}</div>
+        <div class="kpi-lbl">BEST CITY</div>
+        <div class="kpi-sub dn">{{ forecast.best_city.avg_price|default:"—" }} PKR avg</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-icon">📈</div>
+        <div class="kpi-val">{{ analysis.nxt|default:"—" }}</div>
+        <div class="kpi-lbl">NEXT MONTH</div>
+        <div class="kpi-sub {% if analysis.nxtC > 0 %}up{% elif analysis.nxtC < 0 %}dn{% else %}flat{% endif %}">
+          {% if analysis.nxtC > 0 %}▲ +{{ analysis.nxtC }}%{% elif analysis.nxtC < 0 %}▼ {{ analysis.nxtC }}%{% else %}→{% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ DECISION BANNER ══ -->
+    <div class="simple-banner simple-banner-{{ analysis.vc|default:'wait' }}">
+      <div class="simple-banner-icon">
+        {% if analysis.vc == 'buy' %}🟢
+        {% elif analysis.vc == 'sell' %}🔴
+        {% else %}🟡{% endif %}
+      </div>
+      <div class="simple-banner-action">
+        {% if analysis.vc == 'buy' %}✅ NOW IS A GOOD TIME TO BUY
+        {% elif analysis.vc == 'sell' %}📦 NOW IS A GOOD TIME TO SELL
+        {% else %}⏳ WAIT — BETTER PRICE IS COMING{% endif %}
+      </div>
+      <div class="simple-banner-desc">
+        {% if analysis.vc == 'buy' %}
+          The price of <strong>{{ crop }}</strong> is currently <strong>good for buyers</strong>.
+          If you need this crop, buy it now — prices may go up soon.
+        {% elif analysis.vc == 'sell' %}
+          The price of <strong>{{ crop }}</strong> is <strong>high right now</strong>.
+          Farmers — this is a great time to sell your crop and earn more money.
+        {% else %}
+          Do not buy or sell yet. The price of <strong>{{ crop }}</strong> is expected to
+          change soon — possibly in <strong>{{ analysis.best_month }}</strong>.
+          Waiting a little longer could save you or earn you more money.
+        {% endif %}
+      </div>
+
+      <!-- Confidence bar -->
+      <div style="max-width:340px;margin:14px auto 0">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+          <span style="font-size:12px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px">Confidence</span>
+          <span style="font-size:18px;font-weight:900;color:
+            {% if analysis.vc == 'buy' %}#15803d
+            {% elif analysis.vc == 'sell' %}#dc2626
+            {% else %}#b45309{% endif %}">{{ analysis.conf|default:"—" }}%
+            <span style="font-size:12px;font-weight:600;color:#6b7280">
+              — {% if analysis.conf >= 75 %}High{% elif analysis.conf >= 55 %}Medium{% else %}Low{% endif %}
+            </span>
+          </span>
+        </div>
+        <div style="height:10px;background:rgba(0,0,0,.08);border-radius:6px;overflow:hidden">
+          <div style="height:100%;width:{{ analysis.conf|default:0 }}%;border-radius:6px;background:
+            {% if analysis.vc == 'buy' %}linear-gradient(90deg,#16a34a,#22c55e)
+            {% elif analysis.vc == 'sell' %}linear-gradient(90deg,#dc2626,#ef4444)
+            {% else %}linear-gradient(90deg,#d97706,#f59e0b){% endif %};
+            transition:width .6s"></div>
+        </div>
+        <div style="font-size:11px;color:#9ca3af;margin-top:6px;text-align:center">
+          {% if analysis.conf >= 75 %}Trust this recommendation strongly
+          {% elif analysis.conf >= 55 %}Use this as a guide — check again tomorrow
+          {% else %}Low confidence — market is uncertain right now{% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- LIVE WEATHER STRIP -->
+    {% if analysis.weather_now.available %}
+    <div class="weather-strip">
+      <div class="wx-left">
+        <div class="wx-icon-wrap">☁️</div>
+        <div>
+          <div class="wx-city">Live Weather — {{ city }} today</div>
+          <div class="wx-date">{{ analysis.weather_now.description }}</div>
+        </div>
+      </div>
+      <div class="wx-metrics">
+        <div class="wx-m"><div class="wx-m-val wx-m-hot">{{ analysis.weather_now.temp_max }}°C</div><div class="wx-m-lbl">Max Temp</div></div>
+        <div class="wx-m"><div class="wx-m-val wx-m-cold">{{ analysis.weather_now.temp_min }}°C</div><div class="wx-m-lbl">Min Temp</div></div>
+        <div class="wx-m"><div class="wx-m-val wx-m-rain">{{ analysis.weather_now.precip_mm }}mm</div><div class="wx-m-lbl">Rainfall</div></div>
+        <div class="wx-m"><div class="wx-m-val wx-m-humid">{{ analysis.weather_now.rain_prob }}%</div><div class="wx-m-lbl">Rain Prob</div></div>
+      </div>
+      <div class="wx-source">🌐 Open-Meteo (live)</div>
+    </div>
+    {% endif %}
+
+    <!-- CHARTS ROW -->
+    <div class="chart-row">
+      <div class="chart-card">
+        <div class="cc-hd">
+          <div>
+            <div class="cc-title">📊 Price History — Last 90 Days</div>
+            <div class="cc-sub">{{ crop }} in {{ city }} — Daily mandi average (PKR/kg)</div>
+          </div>
+        </div>
+        <div class="cc-bd">
+          <canvas id="historyChart" height="160"></canvas>
+        </div>
+      </div>
+      <div class="chart-card">
+        <div class="cc-hd">
+          <div>
+            <div class="cc-title">📅 Monthly Averages — Full Year</div>
+            <div class="cc-sub">Average price per month — Jan to Dec</div>
+          </div>
+        </div>
+        <div class="cc-bd">
+          <canvas id="monthlyChart" height="160"></canvas>
+        </div>
+      </div>
+    </div>
+    <!-- 📘 Chart Explanation: Price History -->
+    <div class="explain-box">
+      <div class="explain-icon">📊</div>
+      <div>
+        <div class="explain-title">What does "Price History — Last 90 Days" mean?</div>
+        <div class="explain-text">
+          This graph shows how the price of <strong>{{ crop }}</strong> has changed over the last 3 months in <strong>{{ city }}</strong>.
+          The <span style="color:#3d9e3d;font-weight:700">green line</span> is the average price per day.
+          The light red shading above shows the <em>highest</em> price on that day.
+          The light green shading below shows the <em>lowest</em> price.
+          <br><br>
+          <strong>🧑‍🌾 Simple rule:</strong> If the line is going <strong>up ↗</strong> — prices are rising. If going <strong>down ↘</strong> — prices are falling.
+          Use this to see if now is a good time compared to the recent past.
+        </div>
+        <span class="explain-tip">💡 Tip: A rising line means sellers are getting more money. A falling line is good for buyers.</span>
+      </div>
+    </div>
+
+    <!-- 6-MONTH FORECAST -->
+    <div class="forecast-card">
+      <div class="fc-hd">
+        <div>
+          <div class="fc-hd-title">🌤️ 6-Month AI + Weather Forecast — {{ crop }} in {{ city }}</div>
+          <div class="fc-hd-sub">Weather source: {{ forecast.weather_source|default:"Open-Meteo + PMD fallback" }} · Risk: {{ forecast.overall_risk|default:"LOW" }}</div>
+        </div>
+      </div>
+      <div class="fc-grid">
+        {% for m in forecast.months %}
+        <div class="mc {% if m.month_name == forecast.best_month.month_name %}best-month{% endif %} {% if m.flood_risk or m.wsi >= 60 %}risky-month{% endif %}">
+          {% if m.month_name == forecast.best_month.month_name %}<div class="mc-best-tag">⭐ BEST MONTH</div>{% endif %}
+          {% if m.flood_risk %}<div class="mc-risk-tag">⚠️ FLOOD</div>{% endif %}
+          <div class="mc-month">{{ m.month_short }}</div>
+          <div class="mc-weather-icon">
+            {% if m.rainfall_mm >= 150 %}🌊{% elif m.rainfall_mm >= 80 %}⛈️{% elif m.rainfall_mm >= 30 %}🌧️{% elif m.rainfall_mm >= 10 %}🌦️{% elif m.temp_c >= 40 %}🔥{% else %}☀️{% endif %}
+          </div>
+          <div class="mc-price">{{ m.adjusted_price }}</div>
+          <div class="mc-unit">PKR/kg</div>
+          <div class="mc-temp">🌡️ {{ m.temp_c }}°C</div>
+          <div class="mc-rain {% if m.rainfall_mm >= 150 %}mc-rain-high{% elif m.rainfall_mm >= 40 %}mc-rain-med{% else %}mc-rain-low{% endif %}">
+            💧 {{ m.rainfall_mm }}mm
+          </div>
+          <div class="mc-wsi">
+            <div class="mc-wsi-fill" style="width:{{ m.wsi }}%;background:{% if m.wsi >= 60 %}var(--red){% elif m.wsi >= 30 %}var(--gold){% else %}var(--g400){% endif %}"></div>
+          </div>
+          <div class="mc-alerts">
+            {% for a in m.alerts %}<span class="mc-alert-chip {% if a.type == 'danger' %}mca-flood{% elif a.type == 'warning' %}mca-heat{% elif a.type == 'success' %}mca-ideal{% else %}mca-drought{% endif %}">{{ a.icon }}</span>{% endfor %}
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      <div class="fc-legend">
+        <div class="fc-legend-item"><div class="fc-legend-dot" style="background:var(--gold)"></div> Best month to sell</div>
+        <div class="fc-legend-item"><div class="fc-legend-dot" style="background:var(--red)"></div> Flood/high risk</div>
+        <div class="fc-legend-item"><div class="fc-legend-dot" style="background:var(--g400)"></div> Good weather</div>
+        <div class="fc-legend-item">WSI bar = weather stress (higher = worse for crops)</div>
+      </div>
+    </div>
+    <!-- 📘 Chart Explanation: 6-Month Forecast Grid -->
+    <div class="explain-box">
+      <div class="explain-icon">🌤️</div>
+      <div>
+        <div class="explain-title">What does the "6-Month Forecast" calendar mean?</div>
+        <div class="explain-text">
+          This shows the <strong>next 6 months</strong> with a predicted price for each month, plus the weather.
+          Each box = one month. The price shown is what the AI thinks <strong>{{ crop }}</strong> will cost that month.
+          <br><br>
+          🌟 <strong>Gold/yellow box</strong> = Best month — highest price, best time to sell.<br>
+          🔴 <strong>Red box</strong> = Risky month — floods or bad weather expected, avoid selling if possible.<br>
+          ☀️ <strong>Weather icon</strong> shows rain, heat, or flood risk that month.<br>
+          📊 <strong>The small bar at the bottom</strong> shows "Weather Stress" — longer red bar = worse weather for crops.<br><br>
+          <strong>🧑‍🌾 Simple rule:</strong> Look for the <strong>⭐ BEST MONTH</strong> box — that is when you should sell for the highest price.
+          Avoid the red boxes if you are planning to transport or store crops.
+        </div>
+        <span class="explain-tip">💡 Tip: The gold ⭐ box is the best month to sell. The red ⚠️ box means bad weather — be careful.</span>
+      </div>
+    </div>
+
+    <!-- FORECAST CHART -->
+    <div class="chart-card" style="margin-bottom:14px">
+      <div class="cc-hd">
+        <div>
+          <div class="cc-title">6-Month Price Forecast Chart
+            {% if forecast.forecast_engine == 'prophet' %}
+            <span style="display:inline-flex;align-items:center;gap:4px;background:#f0fdf4;border:1.5px solid #86efac;color:#166534;font-size:10px;font-weight:800;padding:2px 10px;border-radius:20px;margin-left:8px;vertical-align:middle">Prophet Model Active</span>
+            {% elif forecast.using_prophet %}
+            <span style="display:inline-flex;align-items:center;gap:4px;background:#eff6ff;border:1.5px solid #93c5fd;color:#1e40af;font-size:10px;font-weight:800;padding:2px 10px;border-radius:20px;margin-left:8px;vertical-align:middle">Holt-Winters Active</span>
+            {% else %}
+            <span style="display:inline-flex;align-items:center;gap:4px;background:#fff7ed;border:1.5px solid #fbbf24;color:#92400e;font-size:10px;font-weight:800;padding:2px 10px;border-radius:20px;margin-left:8px;vertical-align:middle">Historical Averages</span>
+            {% endif %}
+          </div>
+          <div class="cc-sub">
+            {% if forecast.forecast_engine == 'prophet' %}Prophet (Meta) learned from 107k rows · trend + seasonality + changepoints · weather-adjusted
+            {% elif forecast.using_prophet %}Holt-Winters learned from 107k rows · trend + seasonal cycle · weather-adjusted
+            {% else %}Historical monthly averages · weather-adjusted{% endif %}
+          </div>
+        </div>
+      </div>
+      <div class="cc-bd">
+        <canvas id="forecastChart" height="130"></canvas>
+      </div>
+    </div>
+    <!-- 📘 Chart Explanation: Forecast Chart Line -->
+    <div class="explain-box">
+      <div class="explain-icon">📈</div>
+      <div>
+        <div class="explain-title">What does the "6-Month Price Forecast Chart" mean?</div>
+        <div class="explain-text">
+          This line chart shows the AI's price prediction for the next 6 months.
+          <br><br>
+          🟡 <strong>Gold/yellow line</strong> = AI-adjusted forecast (more accurate — includes weather effects).<br>
+          🟢 <strong>Green dashed line</strong> = Base price (simple average without weather).<br>
+          🔴 <strong>Red dot on the line</strong> = That month has flood or extreme weather risk — price may be unstable.<br><br>
+          <strong>🧑‍🌾 Simple rule:</strong> Where the gold line goes <strong>highest</strong> — that is the best time to sell.
+          Where it goes <strong>lowest</strong> — that is the best time to buy.
+          If you hover on any point, you can see the temperature and rainfall for that month too.
+        </div>
+        <span class="explain-tip">💡 Tip: Sell when the gold line is at its peak. Buy when the gold line is at its lowest.</span>
+      </div>
+    </div>
+
+    <!-- BOTTOM GRID: MANDIS + SIGNALS -->
+    <div class="bottom-grid">
+      <!-- MANDI PRICES -->
+      <div class="chart-card">
+        <div class="cc-hd">
+          <div>
+            <div class="cc-title">🏪 Mandi Prices — {{ city }}</div>
+            <div class="cc-sub">Latest prices across all mandis for {{ crop }}</div>
+          </div>
+        </div>
+        <div class="cc-bd">
+          {% for m in mandis %}
+          <div class="mandi-item">
+            <div>
+              <div class="mandi-name">{{ m.market }}</div>
+              <div class="mandi-meta">📅 {{ m.date }} · {{ m.days_old }} days ago</div>
+            </div>
+            <div>
+              <div class="mandi-price">{{ m.price }} PKR</div>
+              <div class="mandi-chg {% if m.change_7d > 0 %}up{% elif m.change_7d < 0 %}dn{% else %}flat{% endif %}">
+                {% if m.change_7d > 0 %}▲ +{{ m.change_7d }}%{% elif m.change_7d < 0 %}▼ {{ m.change_7d }}%{% else %}→ Stable{% endif %} (7d)
+              </div>
+            </div>
+          </div>
+          {% empty %}
+          <div style="text-align:center;padding:28px;color:var(--muted)">No mandi data for this crop/city yet.</div>
+          {% endfor %}
+        </div>
+      </div>
+
+      <!-- AI SIGNALS -->
+      <div class="chart-card">
+        <div class="cc-hd">
+          <div>
+            <div class="cc-title">🤖 AI Signals Breakdown</div>
+            <div class="cc-sub">What factors drive this recommendation</div>
+          </div>
+        </div>
+        <div class="cc-bd">
+          {% for s in analysis.sigs %}
+          <div class="sig-item">
+            <div class="sig-dot {{ s.dot }}"></div>
+            <div>
+              <div class="sig-lbl">{{ s.lbl }}</div>
+              <div class="sig-det">{{ s.det }}</div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+    <!-- 📘 Chart Explanation: Mandi + AI Signals -->
+    <div class="explain-box">
+      <div class="explain-icon">🏪</div>
+      <div>
+        <div class="explain-title">What does "Mandi Prices" and "AI Signals" mean?</div>
+        <div class="explain-text">
+          <strong>Mandi Prices</strong> (left): Shows the latest price of <strong>{{ crop }}</strong> at each local mandi market in {{ city }}.
+          The ▲ red arrow means price went <em>up</em> compared to last week. The ▼ green arrow means it went <em>down</em>.
+          This is real data — no guessing.
+          <br><br>
+          <strong>AI Signals</strong> (right): These are the reasons behind the AI's recommendation.
+          <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#22c55e"></span> <strong>Green dot</strong> = positive sign (buy or sell now).<br>
+          <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#f59e0b"></span> <strong>Yellow dot</strong> = neutral / wait.<br>
+          <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#ef4444"></span> <strong>Red dot</strong> = warning / bad signal.<br>
+          <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#3182ce"></span> <strong>Blue dot</strong> = weather-related note.<br><br>
+          <strong>🧑‍🌾 Simple rule:</strong> More green dots = confident decision. More red dots = be careful.
+        </div>
+        <span class="explain-tip">💡 Tip: Check how many green vs red dots there are — more green means the AI is confident in its advice.</span>
+      </div>
+    </div>
+
+    <!-- CITY COMPARISON -->
+    <div class="chart-card" style="margin-bottom:14px">
+      <div class="cc-hd">
+        <div>
+          <div class="cc-title">🏙️ City Price Comparison — {{ crop }}</div>
+          <div class="cc-sub">Best city to sell in over the next 6 months</div>
+        </div>
+      </div>
+      <div class="cc-bd">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          {% for c in forecast.city_comparison %}
+          <div class="city-cmp-item" style="padding:8px 10px;background:{% if forloop.first %}var(--g50){% else %}#fff{% endif %};border-radius:var(--r6);border:1px solid {% if forloop.first %}var(--g200){% else %}var(--border){% endif %}">
+            <div class="city-rank" style="{% if forloop.first %}background:var(--g500);color:#fff{% endif %}">{{ forloop.counter }}</div>
+            <div class="city-name">{{ c.city }}</div>
+            <div class="city-price">{{ c.avg_price }} PKR</div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <!-- ALL CITIES CHART -->
+    <div class="chart-card">
+      <div class="cc-hd"><div><div class="cc-title">📊 All Cities Price Comparison</div><div class="cc-sub">Current average prices across Pakistan for {{ crop }}</div></div></div>
+      <div class="cc-bd"><canvas id="citiesChart" height="100"></canvas></div>
+    </div>
+    <!-- 📘 Chart Explanation: City Comparison -->
+    <div class="explain-box">
+      <div class="explain-icon">🏙️</div>
+      <div>
+        <div class="explain-title">What does "City Price Comparison" mean?</div>
+        <div class="explain-text">
+          This section and chart show the average price of <strong>{{ crop }}</strong> in every major city in Pakistan.
+          Cities are ranked from <strong>highest price</strong> (#1) to <strong>lowest</strong>.
+          The bar chart below shows each city's price as a bar — taller bar = higher price.
+          The <span style="color:#3d9e3d;font-weight:700">darkest green bar</span> = highest-priced city.
+          The <span style="color:#ef4444;font-weight:700">red bar</span> = lowest-priced city.
+          <br><br>
+          <strong>🧑‍🌾 Simple rule:</strong>
+          <br>🚚 <strong>Farmers (sellers):</strong> Consider selling in the city ranked #1 — you will earn the most money there.
+          <br>🛒 <strong>Buyers:</strong> Look at the city with the lowest price — you can buy cheaper there if transport cost is less.
+        </div>
+        <span class="explain-tip">💡 Tip: Farmers — transport your crop to the highest-priced city. Buyers — look for the city with lowest bar.</span>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<script>
+const GREEN='#3d9e3d', GOLD='#f5a623', RED='#e53e3e', BLUE='#3182ce', MUTED='#9ca3af';
+const histData  = {{ history_json|default:'[]'|safe }};
+const monthData = {{ monthly_json|default:'[]'|safe }};
+const foreData  = {{ forecast_json|default:'[]'|safe }};
+const cityData  = {{ all_cities_json|default:'[]'|safe }};
+
+Chart.defaults.font.family = "'Inter', sans-serif";
+Chart.defaults.font.size   = 11;
+Chart.defaults.color       = MUTED;
+
+// History chart
+if(histData.length){
+  new Chart(document.getElementById('historyChart'), {
+    type:'line',
+    data:{
+      labels: histData.map(d=>d.date.slice(5)),
+      datasets:[{
+        label:'Avg Price (PKR/kg)', data: histData.map(d=>d.avg),
+        borderColor:GREEN, backgroundColor:'rgba(61,158,61,.08)',
+        borderWidth:2, pointRadius:0, fill:true, tension:.3
+      },{
+        label:'Min', data: histData.map(d=>d.min),
+        borderColor:'rgba(61,158,61,.3)', borderWidth:1, pointRadius:0, fill:false, tension:.3
+      },{
+        label:'Max', data: histData.map(d=>d.max),
+        borderColor:'rgba(229,62,62,.3)', borderWidth:1, pointRadius:0, fill:false, tension:.3
+      }]
+    },
+    options:{responsive:true,plugins:{legend:{display:true,position:'bottom'},tooltip:{mode:'index',intersect:false}},scales:{x:{ticks:{maxTicksLimit:8}},y:{beginAtZero:false}}}
+  });
+}
+
+// Monthly averages chart
+const monthLabels=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+if(monthData.length){
+  new Chart(document.getElementById('monthlyChart'), {
+    type:'bar',
+    data:{
+      labels: monthLabels,
+      datasets:[{
+        label:'Avg Price (PKR/kg)', data: monthData,
+        backgroundColor: monthData.map(v=>v===Math.max(...monthData)?GOLD:'rgba(61,158,61,.6)'),
+        borderColor: monthData.map(v=>v===Math.max(...monthData)?GOLD:GREEN),
+        borderWidth:1, borderRadius:4
+      }]
+    },
+    options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{beginAtZero:false}}}
+  });
+}
+
+// Forecast chart — Prophet confidence bands + WSI-adjusted line
+if(foreData.length){
+  const usingProphet = foreData.some(d => d.prophet_price && d.prophet_price !== d.base_price);
+
+  const datasets = [];
+
+  if(usingProphet){
+    // Upper confidence band (filled to lower)
+    datasets.push({
+      label:'Upper Bound',
+      data: foreData.map(d => d.adj_upper || d.adjusted_price),
+      borderColor:'rgba(245,166,35,.15)',
+      backgroundColor:'rgba(245,166,35,.12)',
+      borderWidth:1, pointRadius:0, fill:'+1', tension:.4,
+      order:3
+    });
+    // Lower confidence band
+    datasets.push({
+      label:'Lower Bound',
+      data: foreData.map(d => d.adj_lower || d.adjusted_price),
+      borderColor:'rgba(245,166,35,.15)',
+      backgroundColor:'rgba(245,166,35,.12)',
+      borderWidth:1, pointRadius:0, fill:false, tension:.4,
+      order:4
+    });
+  }
+
+  // Historical baseline (dashed green)
+  datasets.push({
+    label:'Historical Average',
+    data: foreData.map(d => d.base_price),
+    borderColor:'rgba(61,158,61,.45)', borderDash:[5,5], borderWidth:1.5,
+    pointRadius:3, pointBackgroundColor:'rgba(61,158,61,.45)',
+    fill:false, tension:.3, order:2
+  });
+
+  // Prophet + WSI adjusted forecast (gold — main line)
+  datasets.push({
+    label: usingProphet ? 'Prophet + Weather Forecast' : 'Seasonal + Weather Forecast',
+    data: foreData.map(d => d.adjusted_price),
+    borderColor: GOLD,
+    backgroundColor: usingProphet ? 'rgba(245,166,35,.06)' : 'rgba(245,166,35,.06)',
+    borderWidth: 2.5,
+    pointRadius: 6,
+    pointBackgroundColor: foreData.map(d => d.flood_risk ? RED : GOLD),
+    pointBorderColor: '#fff',
+    pointBorderWidth: 2,
+    fill: false, tension:.35, order:1
+  });
+
+  new Chart(document.getElementById('forecastChart'), {
+    type:'line',
+    data:{ labels: foreData.map(d => d.month_short), datasets },
+    options:{
+      responsive:true,
+      interaction:{ mode:'index', intersect:false },
+      plugins:{
+        legend:{ display:true, position:'bottom',
+          labels:{ filter: item => item.label !== 'Upper Bound' && item.label !== 'Lower Bound' }
+        },
+        tooltip:{
+          callbacks:{
+            afterBody: ctx => {
+              const d = foreData[ctx[0].dataIndex];
+              if(!d) return '';
+              const conf = d.confidence_pct ? `\n🎯 Confidence: ${d.confidence_pct}%` : '';
+              return `🌡️ ${d.temp_c}°C  💧 ${d.rainfall_mm}mm${conf}`;
+            }
+          }
+        }
+      },
+      scales:{ y:{ beginAtZero:false, grid:{ color:'rgba(0,0,0,.04)' } } }
+    }
+  });
+}
+
+// Cities chart
+if(cityData.length){
+  new Chart(document.getElementById('citiesChart'), {
+    type:'bar',
+    data:{
+      labels: cityData.map(d=>d.city),
+      datasets:[{
+        label:'Avg Price (PKR/kg)', data: cityData.map(d=>d.avg_price),
+        backgroundColor: cityData.map((d,i)=>i===0?'rgba(61,158,61,.8)':i===cityData.length-1?'rgba(229,62,62,.7)':'rgba(61,158,61,.45)'),
+        borderRadius:4
+      }]
+    },
+    options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{beginAtZero:false}}}
+  });
+}
+</script>
+{% endblock %}

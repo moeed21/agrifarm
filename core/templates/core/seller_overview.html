@@ -1,0 +1,126 @@
+{% extends 'core/seller_base.html' %}
+{% load core_extras %}
+{% block title %}Overview — Seller Dashboard · AgriFarm{% endblock %}
+{% block dash_css %}
+<style>
+.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px}
+.stat-card{background:#fff;border:1.5px solid var(--border);border-radius:var(--r16);padding:22px 18px;text-align:center;border-top:4px solid var(--g400);box-shadow:var(--sh1);transition:all .2s;cursor:default}
+.stat-card:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(0,0,0,.09)}
+.stat-icon{font-size:28px;margin-bottom:8px}
+.stat-val{font-size:30px;font-weight:900;color:var(--g800);font-family:var(--serif)}
+.stat-lbl{font-size:10px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-top:5px}
+
+.qa-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:24px}
+.qa-card{background:#fff;border:1.5px solid var(--border);border-radius:var(--r14);padding:20px;display:flex;align-items:center;gap:16px;text-decoration:none;transition:all .2s;color:var(--ink)}
+.qa-card:hover{border-color:var(--g400);box-shadow:0 4px 18px rgba(0,0,0,.1);transform:translateY(-2px)}
+.qa-icon{width:52px;height:52px;border-radius:var(--r10);display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0}
+.qa-title{font-weight:800;font-size:14px;color:var(--g800)}
+.qa-sub{font-size:12px;color:var(--muted);margin-top:3px}
+.qa-arrow{margin-left:auto;color:var(--muted);font-size:18px;transition:.15s}
+.qa-card:hover .qa-arrow{color:var(--g600);transform:translateX(3px)}
+
+.recent-orders-card{background:#fff;border:1.5px solid var(--border);border-radius:var(--r16);overflow:hidden;box-shadow:var(--sh1)}
+.recent-hd{background:linear-gradient(90deg,var(--g900),var(--g700));color:#fff;padding:14px 20px;display:flex;align-items:center;justify-content:space-between}
+.recent-hd-title{font-weight:800;font-size:14px}
+.recent-hd-link{font-size:12px;color:rgba(255,255,255,.7);text-decoration:none;font-weight:600}
+.recent-hd-link:hover{color:#fff}
+.order-row{display:flex;align-items:center;gap:14px;padding:14px 20px;border-bottom:1px solid var(--g50);transition:background .1s}
+.order-row:last-child{border-bottom:none}
+.order-row:hover{background:var(--g50)}
+.order-emoji{width:40px;height:40px;border-radius:var(--r8);background:var(--g50);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.badge{display:inline-flex;align-items:center;padding:3px 9px;border-radius:20px;font-size:10px;font-weight:800;letter-spacing:.3px}
+.badge-pending{background:#fef3c7;color:#b45309;border:1px solid #fde68a}
+.badge-confirmed{background:#d1fae5;color:#065f46;border:1px solid #a7f3d0}
+.badge-delivered{background:#dbeafe;color:#1e40af;border:1px solid #bfdbfe}
+.badge-cancelled{background:#fee2e2;color:#991b1b;border:1px solid #fca5a5}
+
+.verified-chip{display:inline-flex;align-items:center;gap:4px;background:#f0fdf4;border:1px solid #86efac;color:#166534;font-size:10px;font-weight:700;padding:3px 9px;border-radius:10px}
+</style>
+{% endblock %}
+{% block dash_content %}
+<div class="dash-page-hd">
+  <div>
+    <div class="dash-page-title">📊 Dashboard Overview</div>
+    <div class="dash-page-sub">Welcome back, {{ u.name }}! Here's your selling summary.</div>
+  </div>
+  <a href="{% url 'seller_post' %}" class="btn btn-primary btn-sm">+ Post Listing</a>
+</div>
+
+<!-- Stats -->
+<div class="stat-grid">
+  <div class="stat-card">
+    <div class="stat-icon">📋</div>
+    <div class="stat-val">{{ my_listings|length }}</div>
+    <div class="stat-lbl">Total Listings</div>
+  </div>
+  <div class="stat-card" style="border-top-color:var(--gold)">
+    <div class="stat-icon">✅</div>
+    <div class="stat-val">{{ active_listings }}</div>
+    <div class="stat-lbl">Active Listings</div>
+  </div>
+  <div class="stat-card" style="border-top-color:var(--blue)">
+    <div class="stat-icon">🛍️</div>
+    <div class="stat-val">{{ orders|length }}</div>
+    <div class="stat-lbl">Orders Received</div>
+  </div>
+  <div class="stat-card" style="border-top-color:#6d28d9">
+    <div class="stat-icon">💰</div>
+    <div class="stat-val" style="font-size:20px">{{ total_revenue|default:0 }}</div>
+    <div class="stat-lbl">Revenue (PKR)</div>
+  </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="qa-grid">
+  <a href="{% url 'seller_post' %}" class="qa-card">
+    <div class="qa-icon" style="background:#f0fdf4">📦</div>
+    <div><div class="qa-title">Post a New Listing</div><div class="qa-sub">Add your crop for buyers</div></div>
+    <span class="qa-arrow">›</span>
+  </a>
+  <a href="{% url 'seller_orders' %}" class="qa-card">
+    <div class="qa-icon" style="background:#fefce8">🛍️</div>
+    <div><div class="qa-title">Manage Orders</div><div class="qa-sub">{{ orders|length }} order{{ orders|length|pluralize }} received</div></div>
+    <span class="qa-arrow">›</span>
+  </a>
+  <a href="{% url 'seller_listings' %}" class="qa-card">
+    <div class="qa-icon" style="background:#eff6ff">📋</div>
+    <div><div class="qa-title">My Listings</div><div class="qa-sub">{{ active_listings }} active · {{ my_listings|length }} total</div></div>
+    <span class="qa-arrow">›</span>
+  </a>
+  <a href="{% url 'seller_verification' %}" class="qa-card">
+    <div class="qa-icon" style="background:{% if u.cnic_verified == 'approved' %}#f0fdf4{% else %}#fff7ed{% endif %}">🔐</div>
+    <div>
+      <div class="qa-title">Verification Status</div>
+      <div class="qa-sub">{% if u.cnic_verified == 'approved' %}✅ Fully Verified{% elif u.cnic_verified == 'pending' %}⏳ Under Review{% else %}⚠️ Action Required{% endif %}</div>
+    </div>
+    <span class="qa-arrow">›</span>
+  </a>
+</div>
+
+<!-- Recent Orders -->
+<div class="recent-orders-card">
+  <div class="recent-hd">
+    <div class="recent-hd-title">🕐 Recent Orders</div>
+    <a href="{% url 'seller_orders' %}" class="recent-hd-link">View all →</a>
+  </div>
+  {% for o in orders|slice:":5" %}
+  <div class="order-row">
+    <div class="order-emoji">🌾</div>
+    <div style="flex:1">
+      <div style="font-weight:700;font-size:13px;color:var(--ink)">{{ o.crop }} — {{ o.city }}</div>
+      <div style="font-size:11px;color:var(--muted);margin-top:2px">👤 {{ o.buyer }} · 📦 {{ o.qty }}kg · {{ o.date }}</div>
+    </div>
+    <div style="text-align:right">
+      <div style="font-weight:800;font-size:14px;color:var(--g700)">{{ o.total }} PKR</div>
+      <span class="badge badge-{{ o.status }}">{{ o.status|upper }}</span>
+    </div>
+  </div>
+  {% empty %}
+  <div style="text-align:center;padding:40px;color:var(--muted)">
+    <div style="font-size:40px;margin-bottom:10px">📭</div>
+    <div style="font-weight:700">No orders yet</div>
+    <div style="font-size:12px;margin-top:4px">Orders appear here when buyers purchase your listings</div>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}

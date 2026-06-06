@@ -1,0 +1,582 @@
+{% extends 'core/base.html' %}
+{% load core_extras %}
+{% block title %}{{ listing.crop }} — {{ listing.city }} | AgriFarm{% endblock %}
+
+{% block extra_css %}
+<style>
+/* ── PAGE LAYOUT ── */
+.det-wrap{max-width:1200px;margin:0 auto;padding:0 20px 80px}
+.breadcrumb{padding:18px 0 0;font-size:12.5px;color:var(--muted);display:flex;align-items:center;gap:6px}
+.breadcrumb a{color:var(--muted);text-decoration:none;font-weight:600}
+.breadcrumb a:hover{color:var(--g600)}
+.breadcrumb-sep{color:var(--border)}
+.det-grid{display:grid;grid-template-columns:1fr 420px;gap:28px;align-items:start;padding:18px 0 0}
+
+/* ── STEP FLOW BANNER ── */
+.step-flow{display:flex;align-items:center;gap:0;background:#fff;border:1.5px solid var(--border);border-radius:var(--r10);overflow:hidden;margin-top:18px;box-shadow:var(--sh1)}
+.step-item{display:flex;align-items:center;gap:9px;padding:13px 20px;flex:1;position:relative;font-size:13px;font-weight:700}
+.step-item.active{background:linear-gradient(135deg,var(--g900),var(--g700));color:#fff}
+.step-item.upcoming{background:#fff;color:var(--muted)}
+.step-num{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:900;flex-shrink:0}
+.step-item.active .step-num{background:var(--gold);color:var(--g900)}
+.step-item.upcoming .step-num{background:var(--g100);color:var(--muted)}
+.step-arrow{color:var(--border);font-size:18px;padding:0 4px;font-weight:300}
+.step-item.active + .step-arrow{color:var(--g600)}
+
+/* ── LEFT: GALLERY ── */
+.gallery-main-wrap{position:relative;border-radius:var(--r16);overflow:hidden;background:#fff;border:1.5px solid var(--border);box-shadow:var(--sh2);aspect-ratio:4/3}
+.gallery-main{width:100%;height:100%;object-fit:cover;display:block;transition:opacity .25s}
+.gallery-placeholder{width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:100px;background:linear-gradient(135deg,var(--g50),#fff)}
+.gallery-nav{position:absolute;top:50%;transform:translateY(-50%);width:100%;display:flex;justify-content:space-between;padding:0 12px;pointer-events:none}
+.gallery-nav-btn{pointer-events:all;background:rgba(255,255,255,.92);border:none;width:40px;height:40px;border-radius:50%;font-size:18px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.15);transition:.15s;display:flex;align-items:center;justify-content:center;color:var(--g800)}
+.gallery-nav-btn:hover{background:#fff;box-shadow:0 4px 14px rgba(0,0,0,.2);transform:scale(1.07)}
+.gallery-counter{position:absolute;bottom:12px;right:14px;background:rgba(0,0,0,.5);color:#fff;font-size:11px;font-weight:700;padding:4px 10px;border-radius:12px;backdrop-filter:blur(4px)}
+.gallery-badge{position:absolute;top:14px;left:14px;background:rgba(0,0,0,.55);backdrop-filter:blur(6px);color:#fff;font-size:11px;font-weight:800;padding:5px 12px;border-radius:20px;display:flex;align-items:center;gap:5px}
+
+.gallery-thumbs{display:flex;gap:8px;margin-top:10px;overflow-x:auto;padding-bottom:4px;scrollbar-width:thin}
+.gallery-thumb{width:72px;height:72px;flex-shrink:0;border-radius:10px;object-fit:cover;cursor:pointer;border:2.5px solid transparent;transition:.15s;opacity:.7}
+.gallery-thumb:hover{opacity:1}
+.gallery-thumb.active{border-color:var(--g500);opacity:1}
+.gallery-thumb-placeholder{width:72px;height:72px;flex-shrink:0;border-radius:10px;background:var(--g50);border:2px dashed var(--border);display:flex;align-items:center;justify-content:center;font-size:20px}
+
+/* ── DESCRIPTION CARD ── */
+.desc-card{background:#fff;border:1.5px solid var(--border);border-radius:var(--r16);padding:22px;margin-top:18px;box-shadow:var(--sh1)}
+.desc-card-title{font-weight:800;font-size:13.5px;color:var(--g800);margin-bottom:10px;display:flex;align-items:center;gap:7px}
+.desc-text{font-size:13.5px;color:var(--ink2);line-height:1.75;white-space:pre-line}
+.desc-table{width:100%;border-collapse:collapse;margin-top:14px}
+.desc-table tr{border-bottom:1px solid var(--g50)}
+.desc-table td{padding:8px 4px;font-size:13px}
+.desc-table td:first-child{color:var(--muted);font-weight:600;width:120px}
+.desc-table td:last-child{color:var(--ink);font-weight:700}
+
+/* ── HIGHLIGHTS ── */
+.highlights{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:16px}
+.highlight-item{background:var(--g50);border:1.5px solid var(--g100);border-radius:var(--r10);padding:12px;text-align:center}
+.highlight-icon{font-size:22px;margin-bottom:4px}
+.highlight-label{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px}
+.highlight-value{font-size:14px;font-weight:900;color:var(--g700);margin-top:2px}
+
+/* ── REVIEWS ── */
+.reviews-card{background:#fff;border:1.5px solid var(--border);border-radius:var(--r16);padding:22px;margin-top:18px;box-shadow:var(--sh1)}
+.review-item{background:var(--bg);border:1.5px solid var(--border);border-radius:var(--r10);padding:14px;margin-bottom:10px;transition:.15s}
+.review-item:hover{border-color:var(--g300);box-shadow:0 2px 10px rgba(56,142,60,.08)}
+.stars{color:#f0b429;font-size:15px}
+.star-empty{color:#d1d5db}
+.star-input span{font-size:28px;cursor:pointer;color:#d1d5db;transition:.1s}
+.star-input span.on{color:#f0b429}
+.reviewer-avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--g500),var(--g700));display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:13px;flex-shrink:0}
+
+/* rating bars */
+.rating-bar-row{display:flex;align-items:center;gap:10px;margin-bottom:5px}
+.rating-bar-label{font-size:11px;font-weight:700;color:var(--muted);width:12px;text-align:right;flex-shrink:0}
+.rating-bar-track{flex:1;height:7px;background:var(--g100);border-radius:4px;overflow:hidden}
+.rating-bar-fill{height:100%;background:linear-gradient(90deg,#f0b429,#f59e0b);border-radius:4px}
+
+/* add review button */
+.btn-add-review{display:inline-flex;align-items:center;gap:7px;background:linear-gradient(135deg,var(--g700),var(--g600));color:#fff;border:none;border-radius:var(--r8);padding:10px 18px;font-size:13px;font-weight:800;cursor:pointer;font-family:var(--font);transition:all .18s;box-shadow:0 3px 10px rgba(56,142,60,.25)}
+.btn-add-review:hover{background:linear-gradient(135deg,var(--g800),var(--g700));transform:translateY(-1px);box-shadow:0 5px 16px rgba(56,142,60,.35)}
+
+/* ── RIGHT: BUY PANEL ── */
+.buy-panel{position:sticky;top:22px}
+.buy-card{background:#fff;border:2px solid var(--border);border-radius:var(--r16);overflow:hidden;box-shadow:var(--sh2)}
+.buy-card-hd{background:linear-gradient(135deg,var(--g900),var(--g700));padding:20px;color:#fff}
+.buy-crop-name{font-size:22px;font-weight:900;line-height:1.2}
+.buy-crop-loc{font-size:12.5px;color:rgba(255,255,255,.65);margin-top:4px;display:flex;align-items:center;gap:6px}
+.buy-price-box{margin-top:14px;background:rgba(255,255,255,.12);border-radius:var(--r10);padding:14px 16px;display:flex;align-items:center;justify-content:space-between}
+.buy-price{font-size:30px;font-weight:900;color:#fff}
+.buy-price-unit{font-size:12px;color:rgba(255,255,255,.6)}
+.buy-card-bd{padding:20px}
+
+/* qty picker inside detail */
+.qty-row{display:flex;align-items:center;justify-content:space-between;background:var(--g50);border:1.5px solid var(--border);border-radius:var(--r10);padding:12px 16px;margin-bottom:14px}
+.qty-ctrl{display:flex;align-items:center;border:2px solid var(--g200);border-radius:var(--r8);overflow:hidden}
+.qty-btn{width:36px;height:36px;background:#fff;border:none;font-size:20px;cursor:pointer;color:var(--g700);font-weight:700;transition:background .1s}
+.qty-btn:hover{background:var(--g100)}
+.qty-inp{width:52px;height:36px;border:none;text-align:center;font-size:15px;font-weight:800;font-family:var(--font);background:#fff}
+
+.buy-total{background:var(--g50);border:2px solid var(--g200);border-radius:var(--r10);padding:12px 16px;display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.buy-total-label{font-size:12px;color:var(--muted);font-weight:600}
+.buy-total-amount{font-size:22px;font-weight:900;color:var(--g700)}
+
+/* CTA Buttons */
+.btn-buy-now{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;background:linear-gradient(135deg,var(--g700),var(--g600));color:#fff;border:none;border-radius:var(--r10);padding:16px;font-size:15px;font-weight:800;cursor:pointer;font-family:var(--font);transition:all .2s;text-decoration:none;margin-bottom:10px;box-shadow:0 4px 18px rgba(56,142,60,.35);position:relative;overflow:hidden}
+.btn-buy-now::after{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,255,255,.12),transparent);opacity:0;transition:.2s}
+.btn-buy-now:hover{background:linear-gradient(135deg,var(--g800),var(--g700));transform:translateY(-2px);box-shadow:0 8px 24px rgba(56,142,60,.45)}
+.btn-buy-now:hover::after{opacity:1}
+.btn-buy-now .btn-arrow{transition:transform .2s}
+.btn-buy-now:hover .btn-arrow{transform:translateX(4px)}
+
+.btn-add-cart{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;background:#fff;color:var(--g700);border:2px solid var(--g400);border-radius:var(--r10);padding:12px;font-size:14px;font-weight:700;cursor:pointer;font-family:var(--font);transition:all .18s;text-decoration:none;margin-bottom:10px}
+.btn-add-cart:hover{background:var(--g50);border-color:var(--g600)}
+.btn-analyze{display:flex;align-items:center;justify-content:center;gap:7px;width:100%;background:#f5f3ff;color:#6d28d9;border:1.5px solid #c4b5fd;border-radius:var(--r10);padding:10px;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--font);transition:all .18s;text-decoration:none}
+.btn-analyze:hover{background:#ede9fe}
+
+/* trust badges */
+.trust-badges{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:14px}
+.trust-badge{display:flex;align-items:center;gap:4px;font-size:11px;color:var(--muted);font-weight:600}
+
+/* seller info in panel */
+.seller-row{display:flex;align-items:center;gap:12px;background:var(--g50);border:1.5px solid var(--border);border-radius:var(--r10);padding:12px;margin-bottom:14px}
+.seller-avatar{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,var(--g500),var(--g700));display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:16px;flex-shrink:0}
+.seller-name{font-weight:800;font-size:13.5px;color:var(--ink)}
+.seller-loc{font-size:11.5px;color:var(--muted);margin-top:2px}
+.verified-chip{display:inline-flex;align-items:center;gap:3px;background:#f0fdf4;border:1px solid #86efac;color:#166534;font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;margin-top:4px}
+
+/* stock progress */
+.stock-bar-wrap{margin-bottom:14px}
+.stock-label{display:flex;justify-content:space-between;font-size:11.5px;font-weight:600;color:var(--muted);margin-bottom:5px}
+.stock-bar{height:7px;background:var(--g100);border-radius:4px;overflow:hidden}
+.stock-fill{height:100%;background:linear-gradient(90deg,var(--g500),var(--g400));border-radius:4px;transition:width .6s}
+
+/* AI signal */
+.ai-signal{border-radius:var(--r10);padding:12px 14px;margin-bottom:14px;font-size:13px;font-weight:700;display:flex;align-items:center;gap:9px}
+.ai-signal-good{background:#f0fdf4;border:1.5px solid #86efac;color:#166534}
+.ai-signal-warn{background:#fff7ed;border:1.5px solid #fbbf24;color:#b45309}
+.ai-signal-danger{background:#fff1f2;border:1.5px solid #fca5a5;color:#dc2626}
+.ai-conf-bar{height:4px;background:var(--g100);border-radius:2px;margin-top:6px;overflow:hidden}
+.ai-conf-fill{height:100%;border-radius:2px;background:var(--g500)}
+
+/* checkout nudge box */
+.checkout-nudge{background:linear-gradient(135deg,var(--g50),#fff);border:1.5px dashed var(--g300);border-radius:var(--r10);padding:12px 14px;margin-bottom:14px;display:flex;align-items:center;gap:10px;font-size:12px;color:var(--g700);font-weight:600}
+.checkout-nudge-icon{font-size:20px;flex-shrink:0}
+
+/* divider */
+.panel-divider{height:1px;background:var(--border);margin:14px 0}
+
+@media(max-width:900px){
+  .det-grid{grid-template-columns:1fr}
+  .buy-panel{position:static}
+  .highlights{grid-template-columns:repeat(3,1fr)}
+}
+@media(max-width:600px){
+  .highlights{grid-template-columns:1fr 1fr}
+  .step-flow{display:none}
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="det-wrap">
+
+  <!-- Breadcrumb -->
+  <div class="breadcrumb">
+    <a href="{% url 'marketplace' %}">🛒 Marketplace</a>
+    <span class="breadcrumb-sep">›</span>
+    <a href="{% url 'marketplace' %}?crop={{ listing.crop }}">{{ listing.crop }}</a>
+    <span class="breadcrumb-sep">›</span>
+    <span style="color:var(--ink);font-weight:700">{{ listing.city }}</span>
+  </div>
+
+  <!-- Step Flow -->
+  <div class="step-flow">
+    <div class="step-item active">
+      <div class="step-num">1</div>
+      <span>Product Details</span>
+    </div>
+    <span class="step-arrow">›</span>
+    <div class="step-item upcoming">
+      <div class="step-num">2</div>
+      <span>Checkout</span>
+    </div>
+    <span class="step-arrow">›</span>
+    <div class="step-item upcoming">
+      <div class="step-num">3</div>
+      <span>Order Confirmed</span>
+    </div>
+  </div>
+
+  <div class="det-grid">
+
+    <!-- ══ LEFT COLUMN ══ -->
+    <div>
+
+      <!-- Image Gallery -->
+      <div class="gallery-main-wrap" id="gallery-main-wrap">
+        {% if listing.primary_image %}
+          <img id="mainImg" src="{{ listing.primary_image }}" class="gallery-main" alt="{{ listing.crop }}">
+          <div class="gallery-badge">{{ emoji|default:"🌿" }} {{ listing.crop }}</div>
+          <div class="gallery-nav">
+            <button class="gallery-nav-btn" onclick="galNav(-1)" id="galPrev">‹</button>
+            <button class="gallery-nav-btn" onclick="galNav(1)"  id="galNext">›</button>
+          </div>
+          <div class="gallery-counter" id="galCounter">1 / {{ listing.all_images|length }}</div>
+        {% else %}
+          <div class="gallery-placeholder">{{ emoji|default:"🌿" }}</div>
+        {% endif %}
+      </div>
+
+      <!-- Thumbnails -->
+      {% if listing.all_images|length > 1 %}
+      <div class="gallery-thumbs">
+        {% for img_url in listing.all_images %}
+        <img src="{{ img_url }}" class="gallery-thumb {% if forloop.first %}active{% endif %}"
+             data-src="{{ img_url }}" data-idx="{{ forloop.counter0 }}"
+             onclick="galSelect(this)" alt="{{ listing.crop }} photo {{ forloop.counter }}">
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      <!-- Quick Highlights -->
+      <div class="highlights">
+        <div class="highlight-item">
+          <div class="highlight-icon">💰</div>
+          <div class="highlight-label">Price / kg</div>
+          <div class="highlight-value">{{ listing.price }} PKR</div>
+        </div>
+        <div class="highlight-item">
+          <div class="highlight-icon">📦</div>
+          <div class="highlight-label">Available</div>
+          <div class="highlight-value">{{ listing.qty }} kg</div>
+        </div>
+        <div class="highlight-item">
+          <div class="highlight-icon">⭐</div>
+          <div class="highlight-label">Rating</div>
+          <div class="highlight-value">
+            {% if listing.avg_rating %}{{ listing.avg_rating }}/5{% else %}New{% endif %}
+          </div>
+        </div>
+      </div>
+
+      <!-- Product Description -->
+      <div class="desc-card">
+        <div class="desc-card-title">📋 Product Details</div>
+        {% if listing.desc %}
+          <div class="desc-text">{{ listing.desc }}</div>
+        {% else %}
+          <div class="desc-text" style="color:var(--muted)">No description provided by the seller.</div>
+        {% endif %}
+        <table class="desc-table">
+          <tr><td>Crop</td><td>{{ listing.crop }}</td></tr>
+          <tr><td>City</td><td>{{ listing.city }}</td></tr>
+          {% if listing.market %}<tr><td>Market</td><td>{{ listing.market }}</td></tr>{% endif %}
+          <tr><td>Available</td><td>{{ listing.qty }} kg</td></tr>
+          <tr><td>Sold</td><td>{{ listing.qty_sold }} kg</td></tr>
+          <tr><td>Price</td><td>{{ listing.price }} PKR/kg</td></tr>
+          <tr><td>Crop Type</td><td>{{ listing.crop_type|default:"—" }}</td></tr>
+          <tr><td>Posted</td><td>{{ listing.created_at|date:"M d, Y" }}</td></tr>
+        </table>
+      </div>
+
+      <!-- Reviews -->
+      <div class="reviews-card" id="reviews">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:18px;gap:16px;flex-wrap:wrap">
+          <div>
+            <div style="font-weight:900;font-size:16px;color:var(--g800)">⭐ Customer Reviews</div>
+            <div style="font-size:12px;color:var(--muted);margin-top:3px">
+              {{ listing.review_count }} review{{ listing.review_count|pluralize }} for this listing
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+            {% if listing.avg_rating %}
+            <div style="text-align:center;flex-shrink:0">
+              <div style="font-size:34px;font-weight:900;color:var(--g700);line-height:1">{{ listing.avg_rating }}</div>
+              <div class="stars" style="font-size:14px">
+                {% for i in "12345" %}{% if forloop.counter <= listing.avg_rating|floatformat:"0" %}★{% else %}<span class="star-empty">★</span>{% endif %}{% endfor %}
+              </div>
+              <div style="font-size:10px;color:var(--muted);margin-top:2px">out of 5</div>
+            </div>
+            {% endif %}
+            {% if can_review %}
+            <button class="btn-add-review" id="reviewToggleBtn" onclick="toggleReviewForm()">
+              ✍️ Write a Review
+            </button>
+            {% endif %}
+          </div>
+        </div>
+
+        {% if msg %}<div class="alert alert-success" style="margin-bottom:12px"><span class="alert-icon">✅</span><span class="alert-msg">{{ msg }}</span></div>{% endif %}
+
+        <!-- Write Review Form (toggleable) -->
+        {% if can_review %}
+        <div id="reviewFormWrap" style="display:none;background:var(--g50);border:1.5px solid var(--g200);border-radius:var(--r10);padding:18px;margin-bottom:18px">
+          <div style="font-weight:800;font-size:13px;color:var(--g700);margin-bottom:12px">Rate your experience</div>
+          <form method="post">{% csrf_token %}<input type="hidden" name="action" value="review">
+            <div class="star-input" id="starInput" style="display:flex;gap:6px;margin-bottom:12px">
+              {% for i in "12345" %}<span data-val="{{ forloop.counter }}" onclick="setStar({{ forloop.counter }})">★</span>{% endfor %}
+            </div>
+            <input type="hidden" name="rating" id="ratingVal" value="5">
+            <textarea name="comment" class="finp" rows="3" placeholder="Share your experience — quality, freshness, seller communication…"></textarea>
+            <div style="display:flex;gap:10px;margin-top:12px">
+              <button type="submit" class="btn btn-primary" style="flex:1">Submit Review</button>
+              <button type="button" onclick="toggleReviewForm()" style="padding:10px 18px;border:1.5px solid var(--border);background:#fff;border-radius:var(--r8);font-weight:700;cursor:pointer;font-size:13px;color:var(--muted)">Cancel</button>
+            </div>
+          </form>
+        </div>
+        {% elif already_reviewed %}
+        <div class="alert alert-info" style="margin-bottom:14px"><span class="alert-icon">✅</span><span class="alert-msg">You've already reviewed this listing.</span></div>
+        {% elif not user %}
+        <div style="background:linear-gradient(135deg,#fff7ed,#fffbf0);border:1.5px solid #fbbf24;border-radius:var(--r10);padding:14px 16px;margin-bottom:16px;display:flex;align-items:center;gap:12px">
+          <span style="font-size:24px">✍️</span>
+          <div>
+            <div style="font-weight:800;font-size:13px;color:#92400e">Want to leave a review?</div>
+            <div style="font-size:12px;color:#b45309;margin-top:2px"><a href="{% url 'login' %}" style="color:#d97706;font-weight:700">Login</a> and purchase this product to share your experience.</div>
+          </div>
+        </div>
+        {% endif %}
+
+        <!-- Review list -->
+        {% for r in reviews %}
+        <div class="review-item">
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px;gap:10px">
+            <div style="display:flex;align-items:center;gap:10px">
+              {% if r.reviewer.avatar %}
+              <div class="reviewer-avatar" style="padding:0;overflow:hidden">
+                <img src="{{ r.reviewer.avatar.url }}" alt="{{ r.reviewer.name }}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">
+              </div>
+              {% else %}
+              <div class="reviewer-avatar">{{ r.reviewer.name|slice:":1" }}</div>
+              {% endif %}
+              <div>
+                <div style="font-weight:800;font-size:13px;color:var(--ink)">{{ r.reviewer.name }}</div>
+                <div style="font-size:11px;color:var(--muted);margin-top:1px">{{ r.created_at|date:"M d, Y" }}</div>
+              </div>
+            </div>
+            <div style="flex-shrink:0;text-align:right">
+              <div class="stars" style="font-size:14px">
+                {% for i in "12345" %}{% if forloop.counter <= r.rating %}★{% else %}<span class="star-empty">★</span>{% endif %}{% endfor %}
+              </div>
+              <div style="font-size:10px;color:var(--muted);margin-top:2px">{{ r.rating }}/5</div>
+            </div>
+          </div>
+          {% if r.comment %}
+          <div style="font-size:13px;color:var(--ink2);line-height:1.7;background:#fff;border-radius:var(--r8);padding:10px 12px;border-left:3px solid var(--g300)">{{ r.comment }}</div>
+          {% endif %}
+          <div style="margin-top:8px">
+            <span style="font-size:10px;background:#f0fdf4;border:1px solid #86efac;color:#166534;padding:2px 8px;border-radius:10px;font-weight:700">✅ Verified Purchase</span>
+          </div>
+        </div>
+        {% empty %}
+        <div style="text-align:center;padding:40px 20px;color:var(--muted);font-size:13px">
+          <div style="font-size:48px;margin-bottom:10px">💬</div>
+          <div style="font-weight:700;font-size:14px;color:var(--ink2);margin-bottom:4px">No reviews yet</div>
+          Be the first to share your experience with this seller!
+        </div>
+        {% endfor %}
+      </div>
+
+    </div>
+
+    <!-- ══ RIGHT COLUMN — BUY PANEL ══ -->
+    <div class="buy-panel">
+      <div class="buy-card">
+
+        <!-- Header -->
+        <div class="buy-card-hd">
+          <div style="display:flex;align-items:center;gap:10px">
+            <span style="font-size:38px">{{ emoji|default:"🌿" }}</span>
+            <div>
+              <div class="buy-crop-name">{{ listing.crop }}</div>
+              <div class="buy-crop-loc">📍 {{ listing.city }}{% if listing.market %} · {{ listing.market }}{% endif %}</div>
+            </div>
+          </div>
+          <div class="buy-price-box">
+            <div>
+              <div class="buy-price">{{ listing.price }} <span class="buy-price-unit">PKR/kg</span></div>
+              <div style="font-size:11px;color:rgba(255,255,255,.5);margin-top:2px">Market price</div>
+            </div>
+            <div style="font-size:11px;color:rgba(255,255,255,.7);text-align:right">
+              <div>{{ listing.qty }} kg</div>
+              <div>available</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="buy-card-bd">
+
+          <!-- AI Price Signal -->
+          {% if analysis %}
+          <div class="ai-signal {% if 'Good' in analysis.verdict or 'Fair' in analysis.verdict %}ai-signal-good{% elif 'High' in analysis.verdict %}ai-signal-warn{% else %}ai-signal-good{% endif %}">
+            <span style="font-size:18px">{{ analysis.vi }}</span>
+            <div>
+              <div>{{ analysis.verdict }}</div>
+              <div class="ai-conf-bar"><div class="ai-conf-fill" style="width:{{ analysis.conf }}%"></div></div>
+            </div>
+          </div>
+          {% endif %}
+
+          <!-- Stock progress -->
+          {% if listing.qty_sold > 0 %}
+          <div class="stock-bar-wrap">
+            <div class="stock-label">
+              <span>📦 {{ listing.qty_sold }} kg sold</span>
+              <span>{{ listing.qty }} kg left</span>
+            </div>
+            <div class="stock-bar">
+              <div class="stock-fill" style="width:{% widthratio listing.qty_sold listing.qty 100 %}%"></div>
+            </div>
+          </div>
+          {% endif %}
+
+          <!-- Seller info -->
+          <div class="seller-row">
+            <div class="seller-avatar">{{ listing.seller.name|slice:":1" }}</div>
+            <div style="flex:1">
+              <div class="seller-name">{{ listing.seller.name }}</div>
+              {% if listing.seller.city %}<div class="seller-loc">📍 {{ listing.seller.city }}</div>{% endif %}
+              <div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:4px">
+                {% if listing.seller.verified_phone %}<span class="verified-chip">✅ Phone</span>{% endif %}
+                {% if listing.seller.verified_email %}<span class="verified-chip">✅ Email</span>{% endif %}
+              </div>
+            </div>
+          </div>
+
+          <!-- Qty picker -->
+          <div class="qty-row">
+            <div>
+              <div style="font-size:12px;font-weight:700;color:var(--muted)">QUANTITY (KG)</div>
+              <div id="subtotal-label" style="font-size:12px;color:var(--g600);font-weight:600;margin-top:2px">50 kg × {{ listing.price }} PKR</div>
+            </div>
+            <div class="qty-ctrl">
+              <button type="button" class="qty-btn" onclick="adjQty(-10)">−</button>
+              <input type="number" id="qty-det" value="50" min="1" max="{{ listing.qty }}" class="qty-inp" oninput="updQty()">
+              <button type="button" class="qty-btn" onclick="adjQty(10)">+</button>
+            </div>
+          </div>
+
+          <!-- Total -->
+          <div class="buy-total">
+            <div>
+              <div class="buy-total-label">ESTIMATED TOTAL</div>
+              <div style="font-size:11px;color:var(--muted)">+ delivery (negotiable)</div>
+            </div>
+            <div id="det-total" class="buy-total-amount">{% widthratio 50 1 listing.price %} PKR</div>
+          </div>
+
+          <!-- Checkout nudge -->
+          <div class="checkout-nudge">
+            <span class="checkout-nudge-icon">🛡️</span>
+            <div>You're on the product page. Click below to proceed securely to checkout.</div>
+          </div>
+
+          <!-- CTA Buttons — buyer only -->
+          {% if not user %}
+            <a href="{% url 'login' %}?next={% url 'checkout' listing.id %}" class="btn-buy-now" id="det-buy-btn">
+              🔐 Login to Proceed to Checkout
+            </a>
+            <a href="{% url 'login' %}?next={% url 'checkout' listing.id %}" class="btn-add-cart">
+              🛒 Add to Cart
+            </a>
+          {% elif user_obj.role == 'buyer' %}
+            <a href="{% url 'checkout' listing.id %}?qty=50" class="btn-buy-now" id="det-buy-btn">
+              Proceed to Checkout <span class="btn-arrow">→</span>
+            </a>
+            <button class="btn-add-cart" onclick="addToCart()">
+              ➕ Add to Cart
+            </button>
+          {% else %}
+            <div class="alert alert-warn" style="margin-bottom:10px"><span class="alert-msg">Switch to a Buyer account to purchase.</span></div>
+          {% endif %}
+
+          <div class="panel-divider"></div>
+
+          <a href="{% url 'analysis' %}?crop={{ listing.crop }}&city={{ listing.city }}&role=buyer" class="btn-analyze" id="det-analyze-btn">
+            📊 Analyze Price Trends for {{ listing.crop }}
+          </a>
+
+          <!-- Trust badges -->
+          <div class="trust-badges">
+            <span class="trust-badge">🔒 Secure Checkout</span>
+            <span class="trust-badge">🛡️ Buyer Protected</span>
+            <span class="trust-badge">✅ Verified Seller</span>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── Gallery ──
+const galImages = [{% for img_url in listing.all_images %}"{{ img_url }}"{% if not forloop.last %},{% endif %}{% endfor %}];
+let galIdx = 0;
+
+function galSelect(thumb){
+  galIdx = parseInt(thumb.dataset.idx);
+  updateGal();
+  document.querySelectorAll('.gallery-thumb').forEach(t => t.classList.remove('active'));
+  thumb.classList.add('active');
+}
+
+function galNav(dir){
+  if(!galImages.length) return;
+  galIdx = (galIdx + dir + galImages.length) % galImages.length;
+  updateGal();
+}
+
+function updateGal(){
+  const img = document.getElementById('mainImg');
+  const ctr = document.getElementById('galCounter');
+  if(img){ img.style.opacity='.4'; setTimeout(()=>{ img.src=galImages[galIdx]; img.style.opacity='1'; },150); }
+  if(ctr) ctr.textContent = (galIdx+1) + ' / ' + galImages.length;
+  document.querySelectorAll('.gallery-thumb').forEach((t,i) => t.classList.toggle('active', i===galIdx));
+}
+
+// hide nav buttons if single image
+document.addEventListener('DOMContentLoaded',function(){
+  if(galImages.length <= 1){
+    const p = document.getElementById('galPrev');
+    const n = document.getElementById('galNext');
+    if(p) p.style.display='none';
+    if(n) n.style.display='none';
+    const c = document.getElementById('galCounter');
+    if(c) c.style.display='none';
+  }
+});
+
+// ── Qty & Total ──
+const ppkg = {{ listing.price }};
+function adjQty(d){
+  const i = document.getElementById('qty-det');
+  i.value = Math.max(1, (parseInt(i.value)||50) + d);
+  updQty();
+}
+function updQty(){
+  const q = parseInt(document.getElementById('qty-det').value)||1;
+  document.getElementById('subtotal-label').textContent = q + ' kg × ' + ppkg + ' PKR';
+  document.getElementById('det-total').textContent = (q * ppkg).toLocaleString() + ' PKR';
+  // Update buy link qty
+  const buyBtn = document.getElementById('det-buy-btn');
+  if(buyBtn && buyBtn.href) buyBtn.href = buyBtn.href.replace(/\?qty=\d+/,'') + '?qty=' + q;
+}
+
+// ── Add to Cart ──
+function addToCart(){
+  const qty = parseInt(document.getElementById('qty-det').value)||50;
+  let cart = JSON.parse(localStorage.getItem('agriCart')||'[]');
+  const existing = cart.find(c => c.id == {{ listing.id }});
+  if(existing){ existing.qty = qty; }
+  else{ cart.push({id:{{ listing.id }}, crop:'{{ listing.crop }}', city:'{{ listing.city }}', price:{{ listing.price }}, qty:qty, emoji:'{{ emoji|default:"🌿" }}'}); }
+  localStorage.setItem('agriCart', JSON.stringify(cart));
+  // Flash feedback
+  const btn = document.querySelector('.btn-add-cart');
+  const orig = btn.innerHTML;
+  btn.innerHTML = '✅ Added to Cart!';
+  btn.style.background = '#f0fdf4';
+  btn.style.borderColor = 'var(--g500)';
+  btn.style.color = 'var(--g700)';
+  setTimeout(()=>{ btn.innerHTML=orig; btn.style=''; }, 2000);
+}
+
+// ── Star Rating ──
+function setStar(val){
+  document.getElementById('ratingVal').value = val;
+  document.querySelectorAll('#starInput span').forEach((s,i) => s.classList.toggle('on', i < val));
+}
+document.addEventListener('DOMContentLoaded', () => setStar(5));
+
+// ── Toggle Review Form ──
+function toggleReviewForm(){
+  const wrap = document.getElementById('reviewFormWrap');
+  const btn  = document.getElementById('reviewToggleBtn');
+  if(!wrap) return;
+  const isOpen = wrap.style.display !== 'none';
+  wrap.style.display = isOpen ? 'none' : 'block';
+  if(btn) btn.textContent = isOpen ? '✍️ Write a Review' : '✕ Cancel Review';
+  if(!isOpen){
+    wrap.scrollIntoView({behavior:'smooth', block:'nearest'});
+    setStar(5);
+  }
+}
+</script>
+{% endblock %}

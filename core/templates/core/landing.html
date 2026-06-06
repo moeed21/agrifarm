@@ -1,0 +1,246 @@
+{% extends 'core/base.html' %}
+{% load core_extras %}
+{% block title %}AgriFarm — Know the Price Before You Sell or Buy{% endblock %}
+{% block extra_css %}
+<style>
+/* HERO */
+.hero{background:var(--g900);min-height:92vh;display:grid;grid-template-columns:1fr 1fr;gap:0;align-items:stretch}
+.hero-left{padding:64px 56px 64px 64px;display:flex;flex-direction:column;justify-content:center}
+.hero-eyebrow{display:inline-flex;align-items:center;gap:7px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:5px 14px;font-size:11px;font-weight:600;color:rgba(255,255,255,.7);margin-bottom:28px;width:fit-content}
+.hero-eyebrow-dot{width:7px;height:7px;border-radius:50%;background:var(--g400)}
+.hero-headline{font-family:var(--serif);line-height:1.08;margin-bottom:24px}
+.hero-h1{font-size:62px;font-weight:900;color:#fff;display:block}
+.hero-h2{font-size:62px;font-weight:700;font-style:italic;color:rgba(255,255,255,.3);display:block}
+.hero-h3{font-size:62px;font-weight:900;font-style:italic;color:var(--g400);display:block}
+.hero-desc{font-size:15px;color:rgba(255,255,255,.55);line-height:1.7;margin-bottom:32px;max-width:480px}
+.hero-desc strong{color:rgba(255,255,255,.85);font-weight:600}
+.hero-meta{display:flex;align-items:center;gap:8px;padding:14px 18px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:var(--r8);margin-bottom:32px;font-size:12px;flex-wrap:wrap;gap:6px 14px}
+.hero-meta-item{display:flex;align-items:center;gap:5px;color:rgba(255,255,255,.5)}
+.hero-meta-dot{width:6px;height:6px;border-radius:50%;background:var(--g400)}
+.hero-meta-val{color:rgba(255,255,255,.85);font-weight:600}
+.hero-btns{display:flex;gap:10px;flex-wrap:wrap}
+.btn-hero-primary{background:var(--g500);border:none;color:#fff;border-radius:var(--r8);padding:14px 24px;font-size:14px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:8px;transition:all .15s}
+.btn-hero-primary:hover{background:var(--g600)}
+.btn-hero-secondary{background:transparent;border:1.5px solid rgba(255,255,255,.15);color:rgba(255,255,255,.7);border-radius:var(--r8);padding:14px 24px;font-size:14px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:8px;transition:all .15s}
+.btn-hero-secondary:hover{border-color:rgba(255,255,255,.35);color:#fff}
+
+/* HERO RIGHT — feature cards */
+.hero-right{padding:48px 48px 48px 24px;display:flex;flex-direction:column;justify-content:center;gap:12px;border-left:1px solid rgba(255,255,255,.05)}
+.feat-card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:var(--r12);padding:20px 22px;transition:all .2s;cursor:pointer}
+.feat-card:hover{background:rgba(255,255,255,.07);border-color:rgba(255,255,255,.15);transform:translateX(4px)}
+.feat-card-top{display:flex;align-items:flex-start;gap:14px}
+.feat-icon{font-size:28px;line-height:1;flex-shrink:0}
+.feat-title{font-size:15px;font-weight:700;color:#fff;margin-bottom:5px}
+.feat-desc{font-size:12px;color:rgba(255,255,255,.45);line-height:1.6}
+
+
+
+/* FEATURED LISTINGS */
+.listings-section{background:var(--bg);padding:56px 0}
+.feat-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:14px}
+.lcard{background:#fff;border-radius:var(--r12);border:1px solid var(--border);overflow:hidden;cursor:pointer;transition:all .2s}
+.lcard:hover{border-color:var(--g400);box-shadow:var(--sh2);transform:translateY(-3px)}
+.lcard-img{height:130px;display:flex;align-items:center;justify-content:center;font-size:52px;position:relative;background:var(--g50)}
+.lcard-img img{width:100%;height:100%;object-fit:cover}
+.lcard-badge{position:absolute;top:8px;left:8px;font-size:9px;font-weight:700;padding:2px 7px;border-radius:3px}
+.lb-fresh{background:var(--g100);color:var(--g700);border:1px solid var(--g200)}
+.lb-sale{background:var(--red);color:#fff}
+.lcard-ai{position:absolute;top:8px;right:8px;font-size:9px;font-weight:700;padding:2px 7px;border-radius:3px;border:1px solid}
+.badge-fair{background:var(--g100);color:var(--g700);border-color:var(--g300)}
+.badge-below{background:#ebf4ff;color:var(--blue);border-color:#93c5fd}
+.badge-above{background:#fff7ed;color:#c2410c;border-color:#fdba74}
+.lcard-sold-bar{position:absolute;bottom:0;left:0;right:0;height:3px;background:var(--g100)}
+.lcard-sold-fill{height:100%;background:var(--g500)}
+.lcard-body{padding:10px 12px}
+.lcard-crop{font-size:13px;font-weight:700;color:var(--ink)}
+.lcard-loc{font-size:10px;color:var(--muted);margin-top:1px}
+.lcard-stars{color:var(--gold);font-size:10px;margin:3px 0}
+.lcard-price{font-size:16px;font-weight:700;color:var(--g700)}
+.lcard-orig{font-size:10px;color:var(--muted);text-decoration:line-through;margin-left:4px}
+.lcard-sold{font-size:10px;color:var(--muted);margin-top:2px}
+.lcard-foot{padding:0 12px 12px;display:flex;gap:6px}
+.lc-btn-d{flex:1;background:#fff;border:1.5px solid var(--g600);color:var(--g600);border-radius:var(--r4);padding:7px;font-size:11px;font-weight:600;text-align:center}
+.lc-btn-b{flex:1;background:var(--g600);border:1.5px solid var(--g600);color:#fff;border-radius:var(--r4);padding:7px;font-size:11px;font-weight:600;text-align:center}
+
+/* HOW IT WORKS */
+.how-section{background:var(--g900);padding:56px 0;border-top:1px solid rgba(255,255,255,.06)}
+.how-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.06);border-radius:var(--r12);overflow:hidden;margin-top:32px}
+.how-card{padding:28px 24px;background:var(--g900);text-align:center}
+.how-num{width:32px;height:32px;border-radius:50%;background:var(--g600);color:#fff;font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;margin:0 auto 14px}
+.how-icon{font-size:32px;margin-bottom:12px}
+.how-title{font-size:14px;font-weight:700;color:#fff;margin-bottom:6px}
+.how-sub{font-size:12px;color:rgba(255,255,255,.4);line-height:1.6}
+
+/* FARMER+BUYER BANNER */
+.role-banner{background:var(--bg);padding:48px 0}
+.role-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.rb-card{border-radius:var(--r16);padding:32px;display:flex;align-items:flex-start;gap:20px;position:relative;overflow:hidden}
+.rb-farmer{background:var(--g900);border:1px solid rgba(255,255,255,.08)}
+.rb-buyer{background:#fff;border:1px solid var(--border)}
+.rb-icon{font-size:48px;flex-shrink:0;line-height:1}
+.rb-title{font-size:20px;font-weight:700;margin-bottom:6px}
+.rb-farmer .rb-title{color:#fff}
+.rb-buyer .rb-title{color:var(--ink)}
+.rb-sub{font-size:13px;line-height:1.6;margin-bottom:16px}
+.rb-farmer .rb-sub{color:rgba(255,255,255,.5)}
+.rb-buyer .rb-sub{color:var(--muted)}
+.rb-bg-text{position:absolute;right:-10px;bottom:-20px;font-size:100px;opacity:.04;line-height:1}
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- ═══ HERO ═══════════════════════════════════════════════════════════════ -->
+<section class="hero">
+  <div class="hero-left">
+    <div class="hero-eyebrow">
+      <div class="hero-eyebrow-dot"></div>
+      Pakistan's First Digital Agricultural Marketplace
+    </div>
+    <div class="hero-headline">
+      <span class="hero-h1">Know the Price.</span>
+      <span class="hero-h2">Before You</span>
+      <span class="hero-h3">Sell or Buy.</span>
+    </div>
+    <p class="hero-desc">
+      AgriFarm connects Pakistani farmers directly with buyers — with <strong>real mandi price intelligence</strong>, verified seller profiles, and transparent pricing across 9 cities.
+    </p>
+    <div class="hero-meta">
+      <div class="hero-meta-item"><div class="hero-meta-dot"></div><span class="hero-meta-val">40+</span> crop types</div>
+      <div class="hero-meta-item"><div class="hero-meta-dot"></div><span class="hero-meta-val">9</span> cities</div>
+      <div class="hero-meta-item"><div class="hero-meta-dot"></div><span class="hero-meta-val">Verified</span> farmers</div>
+      <div class="hero-meta-item"><div class="hero-meta-dot"></div><span class="hero-meta-val">Free</span> to join</div>
+    </div>
+    <div class="hero-btns">
+      <a href="{% url 'marketplace' %}" class="btn-hero-primary">🛒 Browse Marketplace <span style="font-size:11px;opacity:.7">Real listings · verified sellers · buy direct</span></a>
+      <a href="{% url 'register' %}?role=seller" class="btn-hero-secondary">🌾 Start Selling Free <span style="font-size:11px;opacity:.7">Post crops · set your price · get paid</span></a>
+    </div>
+  </div>
+
+  <div class="hero-right">
+    <a href="{% url 'marketplace' %}" class="feat-card">
+      <div class="feat-card-top">
+        <div class="feat-icon">📊</div>
+        <div>
+          <div class="feat-title">Real Mandi Price Intelligence</div>
+          <div class="feat-desc">Live price data from mandis across 9 cities. Know the market rate before you sell or buy — transparent and up to date.</div>
+        </div>
+      </div>
+    </a>
+    <a href="{% url 'marketplace' %}" class="feat-card">
+      <div class="feat-card-top">
+        <div class="feat-icon">🌧️</div>
+        <div>
+          <div class="feat-title">Seasonal Price Trends</div>
+          <div class="feat-desc">Understand how seasons, monsoon timing, and regional harvests impact crop prices month by month across all 9 cities.</div>
+        </div>
+      </div>
+    </a>
+    <a href="{% url 'marketplace' %}" class="feat-card">
+      <div class="feat-card-top">
+        <div class="feat-icon">📍</div>
+        <div>
+          <div class="feat-title">Local Market Comparison</div>
+          <div class="feat-desc">Find the best price for any crop near you. Compare listings from verified farmers across mandis in your city.</div>
+        </div>
+      </div>
+    </a>
+    <a href="{% url 'marketplace' %}" class="feat-card">
+      <div class="feat-card-top">
+        <div class="feat-icon">🛡️</div>
+        <div>
+          <div class="feat-title">Verified Farmer Listings</div>
+          <div class="feat-desc">Buy directly from verified farmers. OTP-verified sellers, multiple payment methods, order tracking.</div>
+        </div>
+      </div>
+    </a>
+  </div>
+</section>
+
+<!-- ═══ FEATURED LISTINGS ═════════════════════════════════════════════════ -->
+<section class="listings-section">
+  <div class="wrap">
+    <div style="display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:24px">
+      <div>
+        <div class="section-label" style="color:var(--g600)">Fresh harvest listings</div>
+        <div class="section-title" style="color:var(--ink)">Available Now</div>
+      </div>
+      <a href="{% url 'marketplace' %}" class="btn btn-sm btn-outline">View all →</a>
+    </div>
+    <div class="feat-grid">
+      {% for l in featured_listings %}
+      <div class="lcard">
+        <a href="{% url 'listing_detail' l.id %}" style="display:block">
+          <div class="lcard-img">
+            {% if l.image %}<img src="{{ l.image }}" alt="{{ l.crop }}">{% else %}<span>{{ emoji|dict_get:l.crop }}</span>{% endif %}
+            <span class="lcard-badge lb-fresh">Fresh</span>
+            <span class="lcard-ai {{ l.badge_cls }}">{{ l.badge_txt }}</span>
+            {% if l.qty_sold > 0 %}<div class="lcard-sold-bar"><div class="lcard-sold-fill" style="width:{{ l.sold_pct }}%"></div></div>{% endif %}
+          </div>
+        </a>
+        <div class="lcard-body">
+          <div class="lcard-crop">{{ emoji|dict_get:l.crop }} {{ l.crop }}</div>
+          <div class="lcard-loc">📍 {{ l.city }}{% if l.market %} · {{ l.market|truncatechars:14 }}{% endif %}</div>
+          {% if l.avg_rating %}<div class="lcard-stars">★ {{ l.avg_rating }} <span style="color:var(--muted)">({{ l.review_count }})</span></div>{% endif %}
+          <div><span class="lcard-price">{{ l.price }} PKR</span><span style="font-size:10px;color:var(--muted)">/kg</span>{% if l.discount > 0 %}<span class="lcard-orig">{{ l.market_avg }}</span>{% endif %}</div>
+          {% if l.qty_sold > 0 %}<div class="lcard-sold">📦 {{ l.qty_sold }} kg sold</div>{% endif %}
+        </div>
+        <div class="lcard-foot">
+          <a href="{% url 'listing_detail' l.id %}" class="lc-btn-d">Details</a>
+          <a href="{% url 'checkout' l.id %}" class="lc-btn-b">Buy Now</a>
+        </div>
+      </div>
+      {% empty %}
+      <div style="grid-column:1/-1;text-align:center;padding:48px;background:#fff;border-radius:var(--r12);border:2px dashed var(--border)">
+        <div style="font-size:40px;margin-bottom:12px">🌱</div>
+        <div style="font-size:16px;font-weight:600;color:var(--ink2)">No listings yet</div>
+        <div style="font-size:13px;color:var(--muted);margin-top:4px">Be the first farmer to post!</div>
+        <a href="{% url 'register' %}?role=seller" class="btn btn-primary btn-sm" style="margin-top:14px;display:inline-flex">Start Selling Free</a>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<!-- ═══ HOW IT WORKS ══════════════════════════════════════════════════════ -->
+<section class="how-section">
+  <div class="wrap">
+    <div style="text-align:center">
+      <div class="section-label" style="color:var(--g400);text-align:center">Simple process</div>
+      <div class="section-title" style="text-align:center">How AgriFarm Works</div>
+      <div class="section-sub" style="text-align:center;color:rgba(255,255,255,.3)">Simple · Transparent · Farmer-first</div>
+    </div>
+    <div class="how-grid">
+      <div class="how-card"><div class="how-num">1</div><div class="how-icon">👨‍🌾</div><div class="how-title">Post Your Harvest</div><div class="how-sub">Register free. Add crop, price, photos, and city. Live in minutes.</div></div>
+      <div class="how-card"><div class="how-num">2</div><div class="how-icon">📊</div><div class="how-title">Check Market Prices</div><div class="how-sub">See real mandi prices across 9 cities. Know the going rate so you price your crop competitively.</div></div>
+      <div class="how-card"><div class="how-num">3</div><div class="how-icon">🛒</div><div class="how-title">Buyer Places Order</div><div class="how-sub">Buyer browses, compares prices, and orders via COD, JazzCash, or Bank.</div></div>
+      <div class="how-card"><div class="how-num">4</div><div class="how-icon">💰</div><div class="how-title">Deliver & Get Paid</div><div class="how-sub">Confirm delivery, get paid directly. No middleman. Full price to you.</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ FARMER / BUYER CTA ════════════════════════════════════════════════ -->
+<section class="role-banner">
+  <div class="wrap">
+    <div class="role-grid">
+      <div class="rb-card rb-farmer">
+        <div class="rb-icon">👨‍🌾</div>
+        <div style="position:relative;z-index:1">
+          <div class="rb-title">Are you a farmer?</div>
+          <div class="rb-sub">Post your harvest, set your price, reach buyers across Pakistan. Know the going mandi rate and sell directly — no middleman. Free to join.</div>
+          <a href="{% url 'register' %}?role=seller" class="btn btn-gold btn-sm">Start Selling Free →</a>
+        </div>
+        <div class="rb-bg-text">🌾</div>
+      </div>
+      <div class="rb-card rb-buyer">
+        <div class="rb-icon">🏪</div>
+        <div style="position:relative;z-index:1">
+          <div class="rb-title">Looking to buy crops?</div>
+          <div class="rb-sub">Browse fresh crops at real mandi prices. Verified farmers, transparent pricing, and multiple payment options — buy with confidence.</div>
+          <a href="{% url 'marketplace' %}" class="btn btn-primary btn-sm">Browse Crops →</a>
+        </div>
+        <div class="rb-bg-text" style="opacity:.04">🛒</div>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

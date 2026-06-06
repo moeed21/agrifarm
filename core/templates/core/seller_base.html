@@ -1,0 +1,127 @@
+{% extends 'core/base.html' %}
+{% load core_extras %}
+
+{% block extra_css %}
+<style>
+/* ── DASHBOARD LAYOUT ── */
+.dash-wrap{max-width:1260px;margin:0 auto;padding:28px 24px 60px;display:grid;grid-template-columns:240px 1fr;gap:22px;align-items:start}
+.dash-sidebar{position:sticky;top:78px}
+
+/* ── SIDEBAR PROFILE CARD ── */
+.dash-profile-card{background:linear-gradient(145deg,var(--g900),var(--g700));border-radius:var(--r16);padding:24px 18px;text-align:center;margin-bottom:10px;box-shadow:0 6px 24px rgba(0,0,0,.2)}
+.dash-av{width:80px;height:80px;border-radius:50%;background:rgba(255,255,255,.15);border:3px solid rgba(255,255,255,.3);display:flex;align-items:center;justify-content:center;font-size:30px;font-weight:800;color:#fff;margin:0 auto 12px;overflow:hidden}
+.dash-av img{width:100%;height:100%;object-fit:cover}
+.dash-uname{font-size:16px;font-weight:800;color:#fff;margin-bottom:3px}
+.dash-urole{font-size:11px;color:rgba(255,255,255,.6);display:flex;align-items:center;justify-content:center;gap:5px}
+.dash-role-badge{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.2);border-radius:12px;padding:3px 10px;font-size:10px;font-weight:700;color:rgba(255,255,255,.85);margin-top:6px;display:inline-block}
+
+/* ── SIDEBAR NAV ── */
+.dash-nav{background:#fff;border:1.5px solid var(--border);border-radius:var(--r12);overflow:hidden;box-shadow:var(--sh1)}
+.dash-nav-item{display:flex;align-items:center;gap:11px;padding:13px 16px;font-size:13px;font-weight:600;color:var(--ink2);text-decoration:none;border-left:3px solid transparent;transition:all .15s;border-bottom:1px solid var(--g50)}
+.dash-nav-item:last-child{border-bottom:none}
+.dash-nav-item:hover{background:var(--g50);color:var(--g700);border-left-color:var(--g300)}
+.dash-nav-item.active{background:#f0fdf4;color:var(--g700);border-left-color:var(--g600);font-weight:700}
+.dash-nav-icon{font-size:16px;width:22px;text-align:center;flex-shrink:0}
+.dash-nav-badge{margin-left:auto;background:var(--g100);color:var(--g700);font-size:10px;font-weight:800;padding:2px 8px;border-radius:10px}
+.dash-nav-item.active .dash-nav-badge{background:var(--g600);color:#fff}
+
+.dash-logout{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;margin-top:10px;padding:12px;background:#fff;border:1.5px solid var(--border);border-radius:var(--r10);font-size:13px;font-weight:600;color:var(--muted);text-decoration:none;transition:all .15s}
+.dash-logout:hover{border-color:#fca5a5;color:#dc2626;background:#fff8f8}
+
+/* ── MAIN CONTENT ── */
+.dash-main{}
+.dash-page-hd{margin-bottom:22px;padding-bottom:16px;border-bottom:2px solid var(--border);display:flex;align-items:flex-start;justify-content:space-between;gap:14px;flex-wrap:wrap}
+.dash-page-title{font-size:24px;font-weight:900;color:var(--g800);display:flex;align-items:center;gap:10px}
+.dash-page-sub{font-size:13px;color:var(--muted);margin-top:4px}
+.dash-msg{padding:12px 16px;border-radius:var(--r8);border-left:4px solid;margin-bottom:18px;font-size:13px;font-weight:600;display:flex;align-items:center;gap:10px}
+.dash-msg.ok{background:#f0fdf4;border-left-color:var(--g500);color:var(--g800)}
+.dash-msg.err{background:#fff1f2;border-left-color:#dc2626;color:#b91c1c}
+
+@media(max-width:900px){
+  .dash-wrap{grid-template-columns:1fr;padding:18px 16px 40px}
+  .dash-sidebar{position:static}
+  .dash-nav{display:flex;flex-direction:row;overflow-x:auto;border-radius:var(--r10);gap:0;scrollbar-width:none}
+  .dash-nav::-webkit-scrollbar{display:none}
+  .dash-nav-item{white-space:nowrap;flex-shrink:0;border-left:none;border-bottom:3px solid transparent;border-radius:0;padding:11px 14px}
+  .dash-nav-item.active{border-bottom-color:var(--g600);border-left:none}
+  .dash-profile-card{display:flex;align-items:center;gap:16px;text-align:left;padding:16px}
+  .dash-av{margin:0;width:52px;height:52px;font-size:20px}
+  .dash-logout{padding:10px}
+}
+@media(max-width:600px){
+  .dash-wrap{padding:14px 12px 36px;gap:14px}
+  .dash-uname{font-size:14px}
+  .stat-grid{grid-template-columns:1fr 1fr}
+  .qa-grid{grid-template-columns:1fr}
+  .revenue-bar{gap:16px}
+}
+</style>
+{% block dash_css %}{% endblock %}
+{% endblock %}
+
+{% block content %}
+<div class="dash-wrap">
+
+  <!-- SIDEBAR -->
+  <aside class="dash-sidebar">
+    <div class="dash-profile-card">
+      <div class="dash-av">
+        {% if u.avatar %}<img src="{{ u.avatar.url }}" alt="{{ u.name }}">
+        {% else %}{{ u.name|slice:":1"|upper }}{% endif %}
+      </div>
+      <div class="dash-uname">{{ u.name }}</div>
+      <div class="dash-urole">🌾 Seller Account</div>
+      {% if u.cnic_verified == 'approved' %}
+        <div class="dash-role-badge">✅ Verified Seller</div>
+      {% elif u.cnic_verified == 'pending' %}
+        <div class="dash-role-badge" style="background:rgba(245,166,35,.2);border-color:rgba(245,166,35,.3);color:#f5a623">⏳ Pending</div>
+      {% else %}
+        <div class="dash-role-badge" style="background:rgba(220,38,38,.15);border-color:rgba(220,38,38,.2);color:#fca5a5">⚠️ Unverified</div>
+      {% endif %}
+    </div>
+
+    <nav class="dash-nav">
+      <a href="{% url 'seller_overview' %}" class="dash-nav-item {% if active_tab == 'overview' %}active{% endif %}">
+        <span class="dash-nav-icon">📊</span> Overview
+      </a>
+      <a href="{% url 'seller_post' %}" class="dash-nav-item {% if active_tab == 'post' %}active{% endif %}">
+        <span class="dash-nav-icon">📦</span> Post Listing
+      </a>
+      <a href="{% url 'seller_listings' %}" class="dash-nav-item {% if active_tab == 'listings' %}active{% endif %}">
+        <span class="dash-nav-icon">📋</span> My Listings
+        <span class="dash-nav-badge">{{ active_listings }}</span>
+      </a>
+      <a href="{% url 'seller_orders' %}" class="dash-nav-item {% if active_tab == 'orders' %}active{% endif %}">
+        <span class="dash-nav-icon">🛍️</span> Orders
+        <span class="dash-nav-badge">{{ orders|length }}</span>
+      </a>
+      <a href="{% url 'seller_verification' %}" class="dash-nav-item {% if active_tab == 'verification' %}active{% endif %}">
+        <span class="dash-nav-icon">🔐</span> Verification
+      </a>
+      <a href="{% url 'seller_edit' %}" class="dash-nav-item {% if active_tab == 'edit' %}active{% endif %}">
+        <span class="dash-nav-icon">⚙️</span> Edit Profile
+      </a>
+      <a href="{% url 'analysis' %}" class="dash-nav-item">
+        <span class="dash-nav-icon">📈</span> Price Analysis
+      </a>
+      <a href="{% url 'marketplace' %}" class="dash-nav-item">
+        <span class="dash-nav-icon">🛒</span> Marketplace
+      </a>
+    </nav>
+
+    <a href="{% url 'logout' %}" class="dash-logout">🚪 Sign Out</a>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="dash-main">
+    {% if msg %}
+    <div class="dash-msg {% if '❌' in msg %}err{% else %}ok{% endif %}">
+      <span>{% if '✅' in msg %}✅{% elif '❌' in msg %}❌{% else %}ℹ️{% endif %}</span>
+      <span>{{ msg|safe }}</span>
+    </div>
+    {% endif %}
+    {% block dash_content %}{% endblock %}
+  </main>
+
+</div>
+{% endblock %}

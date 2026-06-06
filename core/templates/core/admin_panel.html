@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Admin Panel — AgriFarm</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',sans-serif;background:#f1f5f1;color:#1a2e1a}
+.topbar{background:linear-gradient(135deg,#0f2210,#1a3a1a);padding:14px 28px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+.topbar-logo{color:#fff;font-weight:900;font-size:16px}
+.topbar-sub{color:rgba(255,255,255,.55);font-size:11px;font-weight:600}
+.topbar-right{display:flex;align-items:center;gap:14px}
+.topbar-user{color:rgba(255,255,255,.8);font-size:12px;font-weight:600}
+.logout-btn{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);color:#fff;padding:6px 14px;border-radius:8px;font-size:12px;font-weight:700;text-decoration:none;cursor:pointer;transition:.15s}
+.logout-btn:hover{background:rgba(255,255,255,.22)}
+.wrap{max-width:1300px;margin:0 auto;padding:24px 20px 60px}
+/* Tabs */
+.tabs{display:flex;gap:6px;margin-bottom:22px;flex-wrap:wrap}
+.tab{padding:9px 18px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;border:2px solid #d1e7d1;background:#fff;color:#2d5a2d;transition:.15s;text-decoration:none}
+.tab.active,.tab:hover{background:#2d7a2d;color:#fff;border-color:#2d7a2d}
+/* Alert */
+.alert{background:#e8f8ee;border:1.5px solid #4caf7d;border-radius:10px;padding:12px 18px;font-size:13px;font-weight:700;color:#1b6b3a;margin-bottom:18px}
+/* Stat grid */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:22px}
+.stat{background:#fff;border:2px solid #e0ece0;border-radius:14px;padding:16px;text-align:center;border-top:4px solid}
+.stat-val{font-size:28px;font-weight:900;color:#1a2e1a}
+.stat-lbl{font-size:10px;font-weight:800;color:#6b7280;text-transform:uppercase;letter-spacing:.6px;margin-top:4px}
+/* Sections */
+.section{display:none}
+.section.active{display:block}
+/* Table */
+.tbl-wrap{background:#fff;border:2px solid #e0ece0;border-radius:14px;overflow:auto}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{background:#f0f7f0;padding:10px 14px;text-align:left;font-size:11px;font-weight:800;color:#2d5a2d;text-transform:uppercase;letter-spacing:.5px;border-bottom:2px solid #e0ece0}
+td{padding:10px 14px;border-bottom:1px solid #f0f7f0;vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:#f8fdf8}
+/* Badges */
+.badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:10px;font-weight:800;text-transform:uppercase}
+.badge-approved{background:#e8f8ee;color:#1b6b3a;border:1px solid #4caf7d}
+.badge-pending{background:#fffbeb;color:#92400e;border:1px solid #f59e0b}
+.badge-rejected{background:#fff0f0;color:#991b1b;border:1px solid #f87171}
+.badge-none{background:#f3f4f6;color:#6b7280;border:1px solid #d1d5db}
+.badge-seller{background:#eff6ff;color:#1d4ed8;border:1px solid #93c5fd}
+.badge-buyer{background:#f0fdf4;color:#15803d;border:1px solid #86efac}
+.badge-admin{background:#faf5ff;color:#7c3aed;border:1px solid #c4b5fd}
+/* Buttons */
+.btn{display:inline-flex;align-items:center;gap:5px;padding:5px 12px;border-radius:7px;font-size:11px;font-weight:700;border:none;cursor:pointer;font-family:inherit;transition:.15s;text-decoration:none}
+.btn-green{background:#2d7a2d;color:#fff}.btn-green:hover{background:#1a5c1a}
+.btn-red{background:#dc2626;color:#fff}.btn-red:hover{background:#b91c1c}
+.btn-amber{background:#d97706;color:#fff}.btn-amber:hover{background:#b45309}
+.btn-gray{background:#6b7280;color:#fff}.btn-gray:hover{background:#4b5563}
+.btn-blue{background:#2563eb;color:#fff}.btn-blue:hover{background:#1d4ed8}
+/* CNIC review card */
+.cnic-card{background:#fff;border:2px solid #e0ece0;border-radius:14px;padding:18px;margin-bottom:14px}
+.cnic-imgs{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:12px 0}
+.cnic-imgs img{width:100%;border-radius:8px;border:2px solid #e0ece0;object-fit:cover;max-height:140px}
+.cnic-imgs .no-img{width:100%;height:100px;background:#f3f4f6;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:12px;color:#9ca3af;border:2px dashed #d1d5db}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+/* Order select & form inputs */
+select.finp{padding:4px 8px;border:1.5px solid #d1e7d1;border-radius:6px;font-family:inherit;font-size:11px;font-weight:600;color:#1a2e1a;background:#fff}
+input.adm-inp{width:100%;padding:10px 14px;border:2px solid #e0ece0;border-radius:10px;font-size:13px;font-family:inherit;transition:.15s;outline:none}
+input.adm-inp:focus{border-color:#2d7a2d;box-shadow:0 0 0 3px rgba(45,122,45,.1)}
+.frow-adm{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+.fgrp-adm{margin-bottom:14px}
+.fgrp-adm label{display:block;font-size:11px;font-weight:800;color:#2d5a2d;margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px}
+/* Profile card */
+.profile-card{background:#fff;border:2px solid #e0ece0;border-radius:14px;padding:24px;max-width:600px}
+/* Invite box */
+.invite-box{background:#fff;border:2px solid #e0ece0;border-radius:14px;padding:24px;max-width:600px;margin-top:18px}
+.invite-box-title{font-weight:900;font-size:15px;color:#1a2e1a;margin-bottom:6px}
+.invite-box-sub{font-size:12px;color:#6b7280;margin-bottom:16px}
+@media(max-width:900px){.stats{grid-template-columns:repeat(2,1fr)} .frow-adm{grid-template-columns:1fr}}
+@media(max-width:600px){.stats{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div>
+    <div class="topbar-logo">🌿 AgriFarm Admin</div>
+    <div class="topbar-sub">Management Console</div>
+  </div>
+  <div class="topbar-right">
+    <span class="topbar-user">👤 {{ admin_user.name }}</span>
+    <a href="{% url 'admin_logout' %}" class="logout-btn">🚪 Logout</a>
+    <a href="/" class="logout-btn">🌐 Site</a>
+  </div>
+</div>
+
+<div class="wrap">
+
+  {% if msg %}
+  <div class="alert">{{ msg|safe }}</div>
+  {% endif %}
+
+  <!-- Stats -->
+  <div class="stats">
+    <div class="stat" style="border-top-color:#2d7a2d">
+      <div class="stat-val">{{ total_sellers }}</div><div class="stat-lbl">Sellers</div>
+    </div>
+    <div class="stat" style="border-top-color:#2563eb">
+      <div class="stat-val">{{ total_buyers }}</div><div class="stat-lbl">Buyers</div>
+    </div>
+    <div class="stat" style="border-top-color:#f59e0b">
+      <div class="stat-val">{{ pending_cnics }}</div><div class="stat-lbl">CNIC Pending</div>
+    </div>
+    <div class="stat" style="border-top-color:#7c3aed">
+      <div class="stat-val">{{ total_listings }}</div><div class="stat-lbl">Listings</div>
+    </div>
+
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <a class="tab active" onclick="showTab('cnic',this)">🪪 CNIC Review ({{ pending_cnics }})</a>
+    <a class="tab" onclick="showTab('sellers',this)">🌾 Sellers</a>
+    <a class="tab" onclick="showTab('buyers',this)">🛒 Buyers</a>
+    <a class="tab" onclick="showTab('listings',this)">📦 Listings</a>
+
+    <a class="tab" onclick="showTab('admins',this)">👑 Admins ({{ admins|length }})</a>
+    <a class="tab" onclick="showTab('profile',this)">⚙️ My Profile</a>
+  </div>
+
+  <!-- CNIC Review -->
+  <div id="tab-cnic" class="section active">
+    {% if pending_cnic_users %}
+      {% for u in pending_cnic_users %}
+      <div class="cnic-card">
+        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+          <div style="flex:1">
+            <div style="font-weight:800;font-size:14px">{{ u.name }}</div>
+            <div style="font-size:12px;color:#6b7280;margin-top:2px">{{ u.email }} · {{ u.phone }} · {{ u.city }}</div>
+            <div style="margin-top:5px">
+              <span class="badge badge-{{ u.cnic_verified }}">{{ u.cnic_verified }}</span>
+              {% if u.cnic %}<span style="font-size:11px;color:#374151;margin-left:8px">CNIC: {{ u.cnic }}</span>{% endif %}
+              {% if u.cnic_name %}<span style="font-size:11px;color:#374151;margin-left:8px">Name: {{ u.cnic_name }}</span>{% endif %}
+            </div>
+          </div>
+        </div>
+        <div class="cnic-imgs">
+          <div>
+            <div style="font-size:10px;font-weight:800;color:#2d5a2d;margin-bottom:4px;text-transform:uppercase">Front</div>
+            {% if u.cnic_front %}
+              <img src="{{ u.cnic_front.url }}" alt="CNIC Front">
+            {% else %}
+              <div class="no-img">No front photo</div>
+            {% endif %}
+          </div>
+          <div>
+            <div style="font-size:10px;font-weight:800;color:#2d5a2d;margin-bottom:4px;text-transform:uppercase">Back</div>
+            {% if u.cnic_back %}
+              <img src="{{ u.cnic_back.url }}" alt="CNIC Back">
+            {% else %}
+              <div class="no-img">No back photo</div>
+            {% endif %}
+          </div>
+        </div>
+        <div class="actions">
+          <form method="post" style="display:inline">{% csrf_token %}
+            <input type="hidden" name="action" value="approve_cnic">
+            <input type="hidden" name="user_id" value="{{ u.id }}">
+            <button type="submit" class="btn btn-green">✅ Approve</button>
+          </form>
+          <form method="post" style="display:inline">{% csrf_token %}
+            <input type="hidden" name="action" value="reject_cnic">
+            <input type="hidden" name="user_id" value="{{ u.id }}">
+            <button type="submit" class="btn btn-red">❌ Reject</button>
+          </form>
+        </div>
+      </div>
+      {% endfor %}
+    {% else %}
+      <div style="text-align:center;padding:48px;color:#6b7280;background:#fff;border-radius:14px;border:2px solid #e0ece0">
+        <div style="font-size:36px;margin-bottom:10px">✅</div>
+        <div style="font-weight:800;font-size:15px">No pending CNIC reviews</div>
+        <div style="font-size:13px;margin-top:4px">All seller CNICs have been processed.</div>
+      </div>
+    {% endif %}
+  </div>
+
+  <!-- Sellers -->
+  <div id="tab-sellers" class="section">
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr>
+          <th>Name</th><th>Email</th><th>Phone</th><th>City</th>
+          <th>CNIC</th><th>CNIC Status</th><th>Joined</th><th>Actions</th>
+        </tr></thead>
+        <tbody>
+        {% for s in sellers %}
+        <tr>
+          <td><strong>{{ s.name }}</strong>{% if s.is_admin %} <span class="badge badge-admin">Admin</span>{% endif %}</td>
+          <td style="color:#2d5a2d">{{ s.email }}</td>
+          <td>{{ s.phone|default:"—" }}</td>
+          <td>{{ s.city|default:"—" }}</td>
+          <td style="font-family:monospace;font-size:11px">{{ s.cnic|default:"—" }}</td>
+          <td><span class="badge badge-{{ s.cnic_verified }}">{{ s.cnic_verified }}</span></td>
+          <td style="font-size:11px;color:#6b7280">{{ s.created_at|date:"d M Y" }}</td>
+          <td>
+            <div style="display:flex;gap:6px;flex-wrap:wrap">
+              {% if s.cnic_verified == 'pending' %}
+              <form method="post" style="display:inline">{% csrf_token %}
+                <input type="hidden" name="action" value="approve_cnic">
+                <input type="hidden" name="user_id" value="{{ s.id }}">
+                <button type="submit" class="btn btn-green">✅ Approve</button>
+              </form>
+              <form method="post" style="display:inline">{% csrf_token %}
+                <input type="hidden" name="action" value="reject_cnic">
+                <input type="hidden" name="user_id" value="{{ s.id }}">
+                <button type="submit" class="btn btn-red">❌ Reject</button>
+              </form>
+              {% elif s.cnic_verified == 'approved' %}
+              <form method="post" style="display:inline">{% csrf_token %}
+                <input type="hidden" name="action" value="reset_cnic">
+                <input type="hidden" name="user_id" value="{{ s.id }}">
+                <button type="submit" class="btn btn-gray">↩ Reset</button>
+              </form>
+              {% elif s.cnic_verified == 'rejected' %}
+              <form method="post" style="display:inline">{% csrf_token %}
+                <input type="hidden" name="action" value="approve_cnic">
+                <input type="hidden" name="user_id" value="{{ s.id }}">
+                <button type="submit" class="btn btn-green">✅ Approve</button>
+              </form>
+              {% endif %}
+              <form method="post" style="display:inline" onsubmit="return confirm('Delete {{ s.name }}?')">{% csrf_token %}
+                <input type="hidden" name="action" value="delete_user">
+                <input type="hidden" name="user_id" value="{{ s.id }}">
+                <button type="submit" class="btn btn-red">🗑</button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="8" style="text-align:center;padding:24px;color:#9ca3af">No sellers yet</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Buyers -->
+  <div id="tab-buyers" class="section">
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr>
+          <th>Name</th><th>Email</th><th>Phone</th><th>City</th><th>Joined</th><th>Actions</th>
+        </tr></thead>
+        <tbody>
+        {% for b in buyers %}
+        <tr>
+          <td><strong>{{ b.name }}</strong>{% if b.is_admin %} <span class="badge badge-admin">Admin</span>{% endif %}</td>
+          <td style="color:#2d5a2d">{{ b.email }}</td>
+          <td>{{ b.phone|default:"—" }}</td>
+          <td>{{ b.city|default:"—" }}</td>
+          <td style="font-size:11px;color:#6b7280">{{ b.created_at|date:"d M Y" }}</td>
+          <td>
+            <form method="post" style="display:inline" onsubmit="return confirm('Delete {{ b.name }}?')">{% csrf_token %}
+              <input type="hidden" name="action" value="delete_user">
+              <input type="hidden" name="user_id" value="{{ b.id }}">
+              <button type="submit" class="btn btn-red">🗑 Delete</button>
+            </form>
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="6" style="text-align:center;padding:24px;color:#9ca3af">No buyers yet</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Listings -->
+  <div id="tab-listings" class="section">
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr>
+          <th>Crop</th><th>Seller</th><th>City</th><th>Price</th><th>Qty</th><th>Status</th><th>Date</th><th>Actions</th>
+        </tr></thead>
+        <tbody>
+        {% for l in recent_listings %}
+        <tr>
+          <td><strong>{{ l.crop }}</strong></td>
+          <td>{{ l.seller.name }}</td>
+          <td>{{ l.city }}</td>
+          <td>{{ l.price }} PKR/kg</td>
+          <td>{{ l.qty }} kg</td>
+          <td><span class="badge badge-{{ l.status }}">{{ l.status }}</span></td>
+          <td style="font-size:11px;color:#6b7280">{{ l.created_at|date:"d M Y" }}</td>
+          <td>
+            <form method="post" style="display:inline" onsubmit="return confirm('Delete this listing?')">{% csrf_token %}
+              <input type="hidden" name="action" value="delete_listing">
+              <input type="hidden" name="listing_id" value="{{ l.id }}">
+              <button type="submit" class="btn btn-red">🗑 Delete</button>
+            </form>
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="8" style="text-align:center;padding:24px;color:#9ca3af">No listings yet</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+
+
+  <!-- Admins -->
+  <div id="tab-admins" class="section">
+    <div class="tbl-wrap" style="margin-bottom:18px">
+      <table>
+        <thead><tr>
+          <th>Name</th><th>Email</th><th>Phone</th><th>Joined</th><th>Actions</th>
+        </tr></thead>
+        <tbody>
+        {% for a in admins %}
+        <tr>
+          <td><strong>{{ a.name }}</strong>
+            {% if a.id|slugify == super_admin_id|slugify %}<span class="badge badge-admin" style="margin-left:6px">🛡 Super Admin</span>{% endif %}
+            {% if a.pk == admin_user.pk %}<span style="font-size:10px;color:#7c3aed;font-weight:800;margin-left:6px">(You)</span>{% endif %}
+          </td>
+          <td style="color:#2d5a2d">{{ a.email }}</td>
+          <td>{{ a.phone|default:"—" }}</td>
+
+          <td style="font-size:11px;color:#6b7280">{{ a.created_at|date:"d M Y" }}</td>
+          <td>
+            {% if a.id|slugify == super_admin_id|slugify %}
+            <span style="font-size:10px;color:#6b7280;font-weight:700">🔒 Protected</span>
+            {% elif admin_user.id|slugify == super_admin_id|slugify %}
+            <form method="post" style="display:inline" onsubmit="return confirm('Remove {{ a.name }} from admins?')">
+              {% csrf_token %}
+              <input type="hidden" name="action" value="remove_admin">
+              <input type="hidden" name="user_id" value="{{ a.id }}">
+              <button type="submit" class="btn btn-red">✕ Remove Admin</button>
+            </form>
+            {% else %}
+            <span style="font-size:10px;color:#9ca3af;font-weight:700">🔒 No permission</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="5" style="text-align:center;padding:24px;color:#9ca3af">No admins</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Invite new admin -->
+    <div class="invite-box">
+      <div class="invite-box-title">➕ Invite New Admin</div>
+      <div class="invite-box-sub">Send an OTP to an email address. After verification, set a password to complete.</div>
+
+      {% if invite_verified and invite_pending %}
+      <!-- Step 3: Set password -->
+      <div style="background:#e8f8ee;border:1.5px solid #4caf7d;border-radius:8px;padding:12px 16px;margin-bottom:14px;font-size:13px;color:#1b6b3a">
+        ✅ OTP verified for <strong>{{ invite_pending }}</strong>. Set a name &amp; password to finish.
+      </div>
+      <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="create_invited_admin">
+        <div class="frow-adm">
+          <div class="fgrp-adm">
+            <label>Full Name</label>
+            <input type="text" name="admin_name" class="adm-inp" placeholder="New Admin Name" required>
+          </div>
+          <div class="fgrp-adm">
+            <label>Password (min 6 chars)</label>
+            <input type="password" name="admin_password" class="adm-inp" placeholder="••••••••" minlength="6" required>
+          </div>
+        </div>
+        <button type="submit" class="btn btn-green" style="padding:10px 18px;font-size:13px">🔐 Create Admin Account</button>
+      </form>
+
+      {% elif invite_pending %}
+      <!-- Step 2: verify OTP -->
+      <div style="background:#fffbeb;border:1.5px solid #f59e0b;border-radius:8px;padding:12px 16px;margin-bottom:14px;font-size:13px;color:#92400e">
+        📧 OTP sent to <strong>{{ invite_pending }}</strong>. Enter it below.
+      </div>
+      <form method="post" style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="verify_invite">
+        <div class="fgrp-adm" style="flex:1;min-width:200px;margin-bottom:0">
+          <label>Enter OTP (demo: 123456)</label>
+          <input type="text" name="invite_otp" class="adm-inp" placeholder="6-digit OTP" maxlength="6" required>
+        </div>
+        <button type="submit" class="btn btn-green" style="padding:10px 18px;font-size:13px">✅ Verify OTP</button>
+      </form>
+
+      {% else %}
+      <!-- Step 1: send OTP -->
+      <form method="post" style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="invite_admin">
+        <div class="fgrp-adm" style="flex:1;min-width:250px;margin-bottom:0">
+          <label>Email Address</label>
+          <input type="email" name="invite_email" class="adm-inp" placeholder="newadmin@example.com" required>
+        </div>
+        <button type="submit" class="btn btn-blue" style="padding:10px 18px;font-size:13px">📧 Send OTP</button>
+      </form>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- My Profile -->
+  <div id="tab-profile" class="section">
+    <div class="profile-card">
+      <div style="font-weight:900;font-size:17px;color:#1a2e1a;margin-bottom:4px">⚙️ Admin Profile</div>
+      <div style="font-size:12px;color:#6b7280;margin-bottom:20px">Update your account details. Email cannot be changed.</div>
+
+      <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="save_admin_profile">
+
+        <div class="frow-adm">
+          <div class="fgrp-adm">
+            <label>Full Name</label>
+            <input type="text" name="name" class="adm-inp" value="{{ admin_user.name }}" required>
+          </div>
+          <div class="fgrp-adm">
+            <label>Phone</label>
+            <input type="tel" name="phone" class="adm-inp" value="{{ admin_user.phone|default:'' }}" placeholder="03XX-XXXXXXX">
+          </div>
+        </div>
+
+        <div class="frow-adm">
+          <div class="fgrp-adm">
+            <label>Email (read-only)</label>
+            <input type="email" class="adm-inp" value="{{ admin_user.email }}" disabled style="background:#f3f4f6;color:#6b7280">
+          </div>
+          <div class="fgrp-adm">
+            <label>City</label>
+            <input type="text" name="city" class="adm-inp" value="{{ admin_user.city|default:'' }}" placeholder="Lahore">
+          </div>
+        </div>
+
+        <div class="fgrp-adm">
+          <label>New Password (leave blank to keep current)</label>
+          <input type="password" name="new_password" class="adm-inp" placeholder="Min 6 characters" minlength="6" style="max-width:300px">
+        </div>
+
+        <button type="submit" class="btn btn-green" style="padding:10px 22px;font-size:13px">💾 Save Profile</button>
+      </form>
+    </div>
+  </div>
+
+</div><!-- /wrap -->
+
+<script>
+function showTab(name, el) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  el.classList.add('active');
+}
+</script>
+</body>
+</html>

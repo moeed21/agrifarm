@@ -1,0 +1,406 @@
+{% load core_extras %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{% block title %}AgriFarm Pakistan{% endblock %}</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Playfair+Display:ital,wght@0,700;0,900;1,700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --g950:#060f06;--g900:#0a1a0a;--g850:#0d2b0d;--g800:#1a4a1a;--g700:#1e5c1e;
+  --g600:#2d7a2d;--g500:#3d9e3d;--g400:#55b755;--g300:#7ecf7e;
+  --g200:#b8e4b8;--g100:#dff2df;--g50:#f0f9f0;
+  --gold:#f5a623;--gold2:#e09015;
+  --red:#e53e3e;--blue:#3182ce;
+  --ink:#0a0a0a;--ink2:#1a1a1a;--muted:#6b7280;--border:#e5e7eb;
+  --bg:#f8faf8;--white:#fff;
+  --sh1:0 1px 3px rgba(0,0,0,.06);--sh2:0 4px 12px rgba(0,0,0,.1);
+  --r4:4px;--r6:6px;--r8:8px;--r10:10px;--r12:12px;--r14:14px;--r16:16px;
+  --font:'Inter',sans-serif;--serif:'Playfair Display',serif;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+  font-family:var(--font);background:var(--bg);color:var(--ink);
+  font-size:14px;line-height:1.5;min-height:100vh;
+  transition:background 0.65s ease;
+  position:relative;
+}
+
+/* ── REGISTER HOVER: background particles (behind all content) ── */
+#reg-parts{
+  position:fixed;inset:0;
+  z-index:0;          /* sits above body background but below all page content */
+  pointer-events:none;
+  overflow:hidden;
+  opacity:0;
+  transition:opacity .45s ease;
+}
+#reg-parts.on{opacity:1}
+.rp{
+  position:absolute;
+  bottom:-50px;
+  animation:rp-rise linear forwards;
+  will-change:transform,opacity;
+  user-select:none;
+  filter:blur(.4px);   /* very slight blur makes them feel like background depth */
+}
+@keyframes rp-rise{
+  0%  {transform:translateY(0) rotate(0deg);   opacity:0}
+  10% {opacity:.55}
+  85% {opacity:.35}
+  100%{transform:translateY(-105vh) rotate(520deg); opacity:0}
+}
+
+/* Ensure all main page content stays above the particles */
+.tb{position:relative;z-index:900}
+footer{position:relative;z-index:10}
+.auth-wrap,.auth-box,.wrap,.hero,.hero-left,.hero-right,
+.listings-section,.how-section,.role-banner,
+.dash-wrap,.dash-sidebar,.dash-main{position:relative;z-index:10}
+a{text-decoration:none;color:inherit}
+button{cursor:pointer;font-family:var(--font)}
+input,select,textarea{font-family:var(--font);outline:none}
+
+/* ── TOP BAR ── */
+.tb{background:var(--g900);position:sticky;top:0;z-index:900;border-bottom:2px solid rgba(255,255,255,.05)}
+.tb-i{max-width:1300px;margin:0 auto;padding:0 20px;height:58px;display:flex;align-items:center;gap:14px}
+.tb-brand{display:flex;align-items:center;gap:10px;text-decoration:none;flex-shrink:0}
+.tb-brand-icon{width:36px;height:36px;background:var(--g500);border-radius:var(--r8);display:flex;align-items:center;justify-content:center;font-size:20px}
+.tb-brand-name{font-size:16px;font-weight:700;color:#fff;letter-spacing:-.3px;line-height:1}
+.tb-brand-tag{font-size:9px;color:var(--g300);letter-spacing:.6px;font-weight:500}
+.tb-nav{display:flex;gap:2px;margin-left:auto}
+.tb-link{display:flex;align-items:center;gap:6px;padding:7px 13px;border-radius:var(--r8);font-size:13px;font-weight:500;color:rgba(255,255,255,.65);transition:all .15s;text-decoration:none}
+.tb-link:hover,.tb-link.active{color:#fff;background:rgba(255,255,255,.08)}
+.tb-right{display:flex;align-items:center;gap:8px;margin-left:10px}
+.tb-login{background:transparent;border:1.5px solid rgba(255,255,255,.2);color:rgba(255,255,255,.8);border-radius:var(--r8);padding:7px 14px;font-size:13px;font-weight:600;cursor:pointer;text-decoration:none;transition:all .15s}
+.tb-login:hover{border-color:rgba(255,255,255,.45);color:#fff}
+.tb-register{
+  background:var(--gold);border:none;color:var(--g900);border-radius:var(--r8);
+  padding:8px 16px;font-size:13px;font-weight:700;cursor:pointer;
+  text-decoration:none;transition:all .25s;position:relative;z-index:850;
+}
+.tb-register:hover{
+  background:var(--gold2);
+  transform:translateY(-2px) scale(1.06);
+  box-shadow:0 0 0 4px rgba(245,166,35,.25),0 6px 20px rgba(224,144,21,.45);
+  letter-spacing:.2px;
+}
+.user-chip{display:flex;align-items:center;gap:7px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:4px 12px 4px 5px;text-decoration:none}
+.user-av{width:26px;height:26px;border-radius:50%;background:var(--g500);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;overflow:hidden;flex-shrink:0}
+.user-av img{width:100%;height:100%;object-fit:cover}
+.user-name{font-size:12px;color:rgba(255,255,255,.9);font-weight:600;line-height:1}
+.user-role{font-size:9px;color:var(--g300);text-transform:capitalize}
+.tb-dash{background:transparent;border:1.5px solid rgba(255,255,255,.18);color:rgba(255,255,255,.75);border-radius:var(--r8);padding:6px 12px;font-size:12px;font-weight:600;text-decoration:none;transition:all .15s}
+.tb-dash:hover{border-color:rgba(255,255,255,.4);color:#fff}
+
+/* ── HAMBURGER ── */
+.tb-hamburger{display:none;flex-direction:column;justify-content:center;align-items:center;gap:5px;width:38px;height:38px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:var(--r8);cursor:pointer;margin-left:auto;flex-shrink:0}
+.tb-hamburger span{display:block;width:18px;height:2px;background:rgba(255,255,255,.8);border-radius:2px;transition:all .25s}
+.tb-hamburger.open span:nth-child(1){transform:rotate(45deg) translate(5px,5px)}
+.tb-hamburger.open span:nth-child(2){opacity:0;transform:scaleX(0)}
+.tb-hamburger.open span:nth-child(3){transform:rotate(-45deg) translate(5px,-5px)}
+
+/* ── MOBILE DRAWER ── */
+.tb-drawer{display:none;position:fixed;top:58px;left:0;right:0;bottom:0;background:var(--g900);z-index:890;padding:16px 20px;overflow-y:auto;flex-direction:column;gap:4px;border-top:1px solid rgba(255,255,255,.08)}
+.tb-drawer.open{display:flex}
+.tb-drawer-link{display:flex;align-items:center;gap:10px;padding:13px 14px;border-radius:var(--r8);font-size:14px;font-weight:600;color:rgba(255,255,255,.8);text-decoration:none;border:1px solid transparent;transition:.15s}
+.tb-drawer-link:hover,.tb-drawer-link.active{background:rgba(255,255,255,.07);border-color:rgba(255,255,255,.1);color:#fff}
+.tb-drawer-divider{height:1px;background:rgba(255,255,255,.07);margin:8px 0}
+.tb-drawer-label{font-size:10px;font-weight:700;color:rgba(255,255,255,.3);letter-spacing:.8px;text-transform:uppercase;padding:4px 14px 8px}
+
+/* ── WRAP ── */
+.wrap{max-width:1300px;margin:0 auto;padding:0 20px}
+
+/* ── BUTTONS ── */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;border-radius:var(--r8);padding:10px 20px;font-weight:600;font-size:13px;border:none;cursor:pointer;transition:all .15s}
+.btn-primary{background:var(--g600);color:#fff}.btn-primary:hover{background:var(--g700)}
+.btn-gold{background:var(--gold);color:var(--g900)}.btn-gold:hover{background:var(--gold2)}
+.btn-outline{background:transparent;border:1.5px solid var(--border);color:var(--ink2)}.btn-outline:hover{border-color:var(--g500);color:var(--g700)}
+.btn-danger{background:var(--red);color:#fff}
+.btn-sm{padding:7px 14px;font-size:12px}
+.btn-lg{padding:13px 26px;font-size:14px;font-weight:700}
+.btn-block{width:100%}
+
+/* ── FORMS ── */
+.fgrp{margin-bottom:14px}
+.fgrp label{display:block;font-size:11px;font-weight:700;color:var(--g600);margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px}
+.finp{width:100%;border:1.5px solid var(--border);border-radius:var(--r8);padding:10px 13px;font-size:13px;background:#fff;color:var(--ink);transition:all .15s}
+.finp:focus{border-color:var(--g400);box-shadow:0 0 0 3px rgba(61,158,61,.1)}
+.frow{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.frow3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+textarea.finp{resize:vertical;min-height:70px}
+.finp-hint{font-size:11px;color:var(--muted);margin-top:4px}
+
+/* ── CARDS ── */
+.card{background:#fff;border-radius:var(--r12);border:1px solid var(--border);box-shadow:var(--sh1);overflow:hidden}
+.card-hd{background:var(--g850);padding:12px 18px;color:#fff;font-weight:700;font-size:13px;display:flex;align-items:center;justify-content:space-between}
+.card-bd{padding:18px}
+
+/* ── BADGES ── */
+.badge{display:inline-block;font-size:10px;font-weight:700;padding:2px 9px;border-radius:20px}
+.badge-active{background:var(--g100);color:var(--g700);border:1px solid var(--g200)}
+.badge-pending{background:#fef3c7;color:#92400e;border:1px solid #fcd34d}
+.badge-confirmed{background:#dbeafe;color:#1d4ed8;border:1px solid #93c5fd}
+.badge-delivered{background:var(--g100);color:var(--g700);border:1px solid var(--g200)}
+.badge-cancelled{background:#fee2e2;color:var(--red);border:1px solid #fca5a5}
+.badge-fair{background:var(--g100);color:var(--g700);border:1px solid var(--g200)}
+.badge-below{background:#ebf4ff;color:var(--blue);border:1px solid #93c5fd}
+.badge-above{background:#fff7ed;color:#c2410c;border:1px solid #fdba74}
+
+/* ── ALERTS ── */
+.alert{display:flex;align-items:flex-start;gap:8px;padding:11px 14px;border-radius:var(--r8);border-left:3px solid;margin-bottom:12px;font-size:13px}
+.alert-success{background:var(--g50);border-left-color:var(--g500)}
+.alert-danger{background:#fef2f2;border-left-color:var(--red)}
+.alert-warn{background:#fffbeb;border-left-color:var(--gold)}
+.alert-info{background:#ebf4ff;border-left-color:var(--blue)}
+.alert-icon{flex-shrink:0}
+.alert-msg{flex:1}
+
+/* ── VERIFIED CHIP ── */
+.verified-chip{display:inline-flex;align-items:center;gap:4px;background:#f0fdf4;border:1px solid #86efac;color:#166534;font-size:11px;font-weight:700;padding:3px 9px;border-radius:10px}
+
+/* ── SEC HEADER (used in cards) ── */
+.sec-hd{background:linear-gradient(90deg,var(--g900),var(--g700));padding:12px 18px;color:#fff;display:flex;align-items:center;justify-content:space-between}
+.sec-title{font-weight:800;font-size:13.5px;color:#fff}
+.sec-sub{font-size:11px;color:rgba(255,255,255,.6);margin-top:2px}
+
+/* ── FOOTER ── */
+footer{background:var(--g950);padding:28px 0;margin-top:60px;border-top:1px solid rgba(255,255,255,.05)}
+.footer-i{max-width:1300px;margin:0 auto;padding:0 20px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:14px}
+.footer-brand{display:flex;align-items:center;gap:8px}
+.footer-icon{font-size:18px}
+.footer-name{font-size:15px;font-weight:700;color:var(--g300)}
+.footer-copy{font-size:11px;color:rgba(255,255,255,.2)}
+.footer-links{display:flex;gap:18px}
+.footer-links a{font-size:11px;color:rgba(255,255,255,.3);transition:color .15s}
+.footer-links a:hover{color:var(--g300)}
+
+/* ══ RESPONSIVE ══════════════════════════════════════════════════════════════ */
+
+/* Tablet ≤ 900px */
+@media(max-width:900px){
+  .tb-nav{display:none}
+  .tb-right{display:none}
+  .tb-hamburger{display:flex}
+  .wrap{padding:0 16px}
+  .frow{grid-template-columns:1fr 1fr}
+  .frow3{grid-template-columns:1fr 1fr}
+  footer{margin-top:40px}
+  .footer-i{flex-direction:column;text-align:center;gap:10px}
+  .footer-links{justify-content:center}
+  /* Dashboard sidebars collapse */
+  .dash-wrap{grid-template-columns:1fr !important}
+  .dash-sidebar{position:static !important}
+}
+
+/* Mobile ≤ 600px */
+@media(max-width:600px){
+  .tb-brand-tag{display:none}
+  .wrap{padding:0 12px}
+  .frow{grid-template-columns:1fr}
+  .frow3{grid-template-columns:1fr}
+  .btn-lg{padding:12px 18px;font-size:13px}
+  .card-bd{padding:14px}
+  .card-hd{padding:10px 14px}
+  /* Dashboard stat grids */
+  .stat-grid{grid-template-columns:1fr 1fr !important}
+  .qa-grid{grid-template-columns:1fr !important}
+  .det-grid{grid-template-columns:1fr !important}
+  .ck-grid{grid-template-columns:1fr !important}
+  .frow-2{grid-template-columns:1fr !important}
+  .frow-3{grid-template-columns:1fr !important}
+  .profile-grid{grid-template-columns:1fr !important}
+  .pay-options{grid-template-columns:1fr !important}
+  /* Checkout sidebar goes below form on mobile */
+  .ck-sidebar{position:static !important}
+  /* Buy panel stacks */
+  .buy-panel{position:static !important}
+}
+
+/* Extra small ≤ 400px */
+@media(max-width:400px){
+  .stat-grid{grid-template-columns:1fr !important}
+  .tb-brand-name{font-size:13px}
+}
+</style>
+{% block extra_css %}{% endblock %}
+</head>
+<body>
+
+<!-- ══ TOP BAR ══ -->
+<header class="tb">
+  <div class="tb-i">
+    <a href="{% url 'landing' %}" class="tb-brand">
+      <div class="tb-brand-icon">🌾</div>
+      <div>
+        <div class="tb-brand-name">AgriFarm</div>
+        <div class="tb-brand-tag">PAKISTAN</div>
+      </div>
+    </a>
+
+    <!-- Desktop nav -->
+    <nav class="tb-nav">
+      <a href="{% url 'marketplace' %}" class="tb-link {% if request.resolver_match.url_name == 'marketplace' %}active{% endif %}">🛒 Marketplace</a>
+      <a href="{% url 'analysis' %}" class="tb-link {% if request.resolver_match.url_name == 'analysis' %}active{% endif %}">📊 Analysis</a>
+    </nav>
+
+    <!-- Desktop right -->
+    <div class="tb-right">
+      {% if user %}
+        <a href="{% if user.role == 'seller' %}{% url 'seller_overview' %}{% else %}{% url 'buyer_overview' %}{% endif %}" class="user-chip">
+          <div class="user-av">{% if user.avatar %}<img src="{{ user.avatar }}" alt="">{% else %}{{ user.name|slice:":1" }}{% endif %}</div>
+          <div><div class="user-name">{{ user.name|truncatechars:14 }}</div><div class="user-role">{{ user.role }}</div></div>
+        </a>
+        <a href="{% if user.role == 'seller' %}{% url 'seller_overview' %}{% else %}{% url 'buyer_overview' %}{% endif %}" class="tb-dash">Dashboard</a>
+        <a href="{% url 'logout' %}" class="tb-login">Logout</a>
+      {% else %}
+        <a href="{% url 'login' %}" class="tb-login">Login</a>
+        <a href="{% url 'register' %}" class="tb-register" id="regBtn">Register Free</a>
+      {% endif %}
+    </div>
+
+    <!-- Hamburger -->
+    <button class="tb-hamburger" id="hamburger" aria-label="Open menu" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</header>
+
+<!-- ══ MOBILE DRAWER ══ -->
+<div class="tb-drawer" id="mobileDrawer" role="navigation" aria-label="Mobile menu">
+  <div class="tb-drawer-label">Navigation</div>
+  <a href="{% url 'landing' %}" class="tb-drawer-link">🏠 Home</a>
+  <a href="{% url 'marketplace' %}" class="tb-drawer-link {% if request.resolver_match.url_name == 'marketplace' %}active{% endif %}">🛒 Marketplace</a>
+  <a href="{% url 'analysis' %}" class="tb-drawer-link {% if request.resolver_match.url_name == 'analysis' %}active{% endif %}">📊 Price Analysis</a>
+
+  <div class="tb-drawer-divider"></div>
+
+  {% if user %}
+    <div class="tb-drawer-label">Account — {{ user.name }}</div>
+    {% if user.role == 'seller' %}
+      <a href="{% url 'seller_overview' %}"     class="tb-drawer-link">📊 Dashboard</a>
+      <a href="{% url 'seller_post' %}"         class="tb-drawer-link">📦 Post Listing</a>
+      <a href="{% url 'seller_listings' %}"     class="tb-drawer-link">📋 My Listings</a>
+      <a href="{% url 'seller_orders' %}"       class="tb-drawer-link">🛍️ Orders</a>
+      <a href="{% url 'seller_verification' %}" class="tb-drawer-link">🔐 Verification</a>
+      <a href="{% url 'seller_edit' %}"         class="tb-drawer-link">⚙️ Edit Profile</a>
+    {% else %}
+      <a href="{% url 'buyer_overview' %}" class="tb-drawer-link">📊 Dashboard</a>
+      <a href="{% url 'buyer_orders' %}"   class="tb-drawer-link">📋 My Orders</a>
+      <a href="{% url 'buyer_verify' %}"   class="tb-drawer-link">🔐 Verification</a>
+      <a href="{% url 'buyer_profile' %}"  class="tb-drawer-link">⚙️ Edit Profile</a>
+    {% endif %}
+    <div class="tb-drawer-divider"></div>
+    <a href="{% url 'logout' %}" class="tb-drawer-link" style="color:#fca5a5">🚪 Logout</a>
+  {% else %}
+    <div class="tb-drawer-divider"></div>
+    <a href="{% url 'login' %}"    class="tb-drawer-link">🔐 Login</a>
+    <a href="{% url 'register' %}" class="tb-drawer-link" style="background:var(--gold);color:var(--g900);font-weight:700;margin-top:4px">✨ Register Free</a>
+  {% endif %}
+</div>
+
+{% block content %}{% endblock %}
+
+<footer>
+  <div class="footer-i">
+    <div class="footer-brand"><span class="footer-icon">🌾</span><span class="footer-name">AgriFarm Pakistan</span></div>
+    <div class="footer-copy">© 2025 AgriFarm Pakistan · All rights reserved</div>
+    <div class="footer-links">
+      <a href="{% url 'landing' %}">Home</a>
+      <a href="{% url 'marketplace' %}">Market</a>
+      <a href="{% url 'analysis' %}">Analysis</a>
+      <a href="{% url 'login' %}">Login</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+const hamburger = document.getElementById('hamburger');
+const drawer    = document.getElementById('mobileDrawer');
+
+hamburger.addEventListener('click', function(){
+  const open = drawer.classList.toggle('open');
+  hamburger.classList.toggle('open', open);
+  hamburger.setAttribute('aria-expanded', String(open));
+  document.body.style.overflow = open ? 'hidden' : '';
+});
+
+drawer.querySelectorAll('a').forEach(a => {
+  a.addEventListener('click', () => {
+    drawer.classList.remove('open');
+    hamburger.classList.remove('open');
+    hamburger.setAttribute('aria-expanded', 'false');
+    document.body.style.overflow = '';
+  });
+});
+
+document.addEventListener('click', function(e){
+  if(drawer.classList.contains('open') && !drawer.contains(e.target) && !hamburger.contains(e.target)){
+    drawer.classList.remove('open');
+    hamburger.classList.remove('open');
+    hamburger.setAttribute('aria-expanded', 'false');
+    document.body.style.overflow = '';
+  }
+});
+
+/* ══ REGISTER HOVER THEME EFFECT ══ */
+(function(){
+  var btn = document.getElementById('regBtn');
+  if(!btn) return;
+
+  /* Particle container — created once, lives behind page content */
+  var pt = document.getElementById('reg-parts');
+  if(!pt){
+    pt = document.createElement('div');
+    pt.id = 'reg-parts';
+    document.body.appendChild(pt);
+  }
+
+  var crops = ['🌾','🌿','🍃','🌱','🌻','🍀','🌽','🥬','🌾','🌾','🍂','🌳','🌾','🌿'];
+  var pool = [], timer = null;
+
+  function spawn(){
+    var el = document.createElement('span');
+    el.className = 'rp';
+    el.textContent = crops[Math.floor(Math.random() * crops.length)];
+    var sz  = 18 + Math.random() * 26;
+    var dur = 3 + Math.random() * 4;
+    var lft = Math.random() * 100;
+    el.style.cssText =
+      'left:'  + lft + '%;' +
+      'font-size:' + sz + 'px;' +
+      'animation-duration:' + dur + 's;' +
+      'animation-delay:'   + (Math.random() * .8) + 's;';
+    pt.appendChild(el);
+    pool.push(el);
+    if(pool.length > 35){ pool.shift().remove(); }
+  }
+
+  function show(){
+    document.body.style.background =
+      'radial-gradient(ellipse at 20% 80%,rgba(180,110,0,.2) 0%,transparent 55%),' +
+      'radial-gradient(ellipse at 80% 20%,rgba(30,92,30,.18) 0%,transparent 55%),' +
+      'radial-gradient(ellipse at 55% 50%,rgba(245,166,35,.12) 0%,transparent 60%),' +
+      'linear-gradient(160deg,#fffdf5 0%,#f5f0d0 45%,#eaf5ea 100%)';
+    pt.classList.add('on');
+    /* burst of initial particles then trickle */
+    for(var i = 0; i < 12; i++) setTimeout(spawn, i * 55);
+    timer = setInterval(spawn, 200);
+  }
+
+  function hide(){
+    document.body.style.background = '';
+    pt.classList.remove('on');
+    clearInterval(timer);
+    setTimeout(function(){ pool.forEach(function(p){ p.remove(); }); pool = []; }, 700);
+  }
+
+  btn.addEventListener('mouseenter', show);
+  btn.addEventListener('mouseleave', hide);
+  btn.addEventListener('focus',      show);
+  btn.addEventListener('blur',       hide);
+})();
+</script>
+{% block extra_js %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,111 @@
+{% extends 'core/seller_base.html' %}
+{% load core_extras %}
+{% block title %}My Listings — Seller Dashboard · AgriFarm{% endblock %}
+{% block dash_css %}
+<style>
+.listing-card{background:#fff;border:1.5px solid var(--border);border-radius:var(--r14);padding:0;margin-bottom:12px;overflow:hidden;transition:all .2s;display:flex;flex-direction:column}
+.listing-card:hover{border-color:var(--g300);box-shadow:0 4px 18px rgba(0,0,0,.09)}
+.listing-card-inner{display:flex;align-items:center;gap:16px;padding:16px 18px;flex:1}
+.listing-img{width:70px;height:70px;border-radius:var(--r10);object-fit:cover;flex-shrink:0;background:var(--g50);display:flex;align-items:center;justify-content:center;font-size:28px}
+.listing-img img{width:100%;height:100%;object-fit:cover;border-radius:var(--r10)}
+.listing-name{font-weight:800;font-size:15px;color:var(--g800)}
+.listing-meta{font-size:11.5px;color:var(--muted);margin-top:4px;line-height:1.6}
+.listing-price{font-size:20px;font-weight:900;color:var(--g700);white-space:nowrap}
+.listing-sold{font-size:11px;color:var(--muted);margin-top:2px;text-align:right}
+
+/* sold bar */
+.sold-bar-wrap{padding:0 18px 12px;display:flex;align-items:center;gap:10px}
+.sold-bar{flex:1;height:6px;background:var(--g100);border-radius:3px;overflow:hidden}
+.sold-bar-fill{height:100%;background:linear-gradient(90deg,var(--g500),var(--g400));border-radius:3px}
+.sold-pct{font-size:11px;font-weight:700;color:var(--g600);white-space:nowrap}
+
+.badge{display:inline-flex;align-items:center;padding:3px 9px;border-radius:20px;font-size:10px;font-weight:800;letter-spacing:.3px}
+.badge-active{background:#d1fae5;color:#065f46;border:1px solid #a7f3d0}
+.badge-sold{background:#dbeafe;color:#1e40af;border:1px solid #bfdbfe}
+.badge-inactive{background:#f3f4f6;color:#6b7280;border:1px solid #e5e7eb}
+
+.listing-actions{display:flex;align-items:center;gap:8px;padding:10px 18px;background:var(--g50);border-top:1px solid var(--border)}
+.listing-actions a,.listing-actions button{font-size:11px;font-weight:700;padding:6px 12px;border-radius:var(--r6);cursor:pointer;text-decoration:none;transition:.15s;border:1.5px solid transparent;font-family:var(--font)}
+.la-view{background:#fff;border-color:var(--g300);color:var(--g700)}
+.la-view:hover{background:var(--g50)}
+.la-analyze{background:#f5f3ff;border-color:#c4b5fd;color:#6d28d9}
+.la-analyze:hover{background:#ede9fe}
+.la-delete{background:#fff1f2;border-color:#fca5a5;color:#dc2626}
+.la-delete:hover{background:#fee2e2}
+
+.img-count-badge{display:inline-flex;align-items:center;gap:3px;background:rgba(0,0,0,.5);color:#fff;font-size:9px;font-weight:700;padding:2px 6px;border-radius:8px;margin-left:6px}
+</style>
+{% endblock %}
+{% block dash_content %}
+<div class="dash-page-hd">
+  <div>
+    <div class="dash-page-title">📋 My Listings</div>
+    <div class="dash-page-sub">{{ my_listings|length }} listing{{ my_listings|length|pluralize }} · {{ active_listings }} active</div>
+  </div>
+  <a href="{% url 'seller_post' %}" class="btn btn-primary btn-sm">+ New Listing</a>
+</div>
+
+{% for l in my_listings %}
+<div class="listing-card">
+  <div class="listing-card-inner">
+    <!-- Image -->
+    <div class="listing-img">
+      {% if l.primary_image %}
+        <img src="{{ l.primary_image }}" alt="{{ l.crop }}">
+      {% else %}
+        {{ emoji|dict_get:l.crop|default:'🌿' }}
+      {% endif %}
+    </div>
+
+    <!-- Info -->
+    <div style="flex:1;min-width:0">
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        <div class="listing-name">{{ l.crop }}</div>
+        <span class="badge badge-{{ l.status }}">{{ l.status|upper }}</span>
+        {% if l.all_images|length > 0 %}<span class="img-count-badge" style="background:var(--g500)">📷 {{ l.all_images|length }}</span>{% endif %}
+        {% if l.avg_rating %}<span style="color:#f0b429;font-size:12px;font-weight:700">★ {{ l.avg_rating }}</span>{% endif %}
+      </div>
+      <div class="listing-meta">
+        📍 {{ l.city }}{% if l.market %} · {{ l.market }}{% endif %}<br>
+        📦 {{ l.qty }}kg available &nbsp;·&nbsp; 📤 {{ l.qty_sold }}kg sold
+      </div>
+    </div>
+
+    <!-- Price + sold -->
+    <div style="text-align:right;flex-shrink:0">
+      <div class="listing-price">{{ l.price }} <span style="font-size:12px;font-weight:600;color:var(--muted)">PKR/kg</span></div>
+      <div class="listing-sold">{{ l.qty_sold }}kg of {{ l.qty }}kg sold</div>
+    </div>
+  </div>
+
+  <!-- Sold progress bar -->
+  {% if l.qty > 0 %}
+  <div class="sold-bar-wrap">
+    <div style="font-size:11px;color:var(--muted);width:50px;flex-shrink:0">Sold</div>
+    <div class="sold-bar">
+      <div class="sold-bar-fill" style="width:{% widthratio l.qty_sold l.qty 100 %}%"></div>
+    </div>
+    <div class="sold-pct">{% widthratio l.qty_sold l.qty 100 %}%</div>
+  </div>
+  {% endif %}
+
+  <!-- Actions -->
+  <div class="listing-actions">
+    <a href="{% url 'listing_detail' l.id %}" class="la-view">👁 View</a>
+    <a href="{% url 'analysis' %}?crop={{ l.crop }}&city={{ l.city }}&role=seller" class="la-analyze">📊 Analyze</a>
+    <form method="post" style="margin-left:auto">{% csrf_token %}
+      <input type="hidden" name="action" value="delete_listing">
+      <input type="hidden" name="lid" value="{{ l.id }}">
+      <button type="submit" class="la-delete" onclick="return confirm('Remove this listing?')">🗑 Delete</button>
+    </form>
+  </div>
+</div>
+{% empty %}
+<div style="text-align:center;padding:60px 24px;background:#fff;border:2px dashed var(--border);border-radius:var(--r16)">
+  <div style="font-size:56px;margin-bottom:14px">📦</div>
+  <div style="font-size:19px;font-weight:800;color:var(--g800);margin-bottom:6px">No listings yet</div>
+  <div style="font-size:13px;color:var(--muted);margin-bottom:22px">Post your first crop listing to start selling to buyers across Pakistan</div>
+  <a href="{% url 'seller_post' %}" class="btn btn-primary">🌿 Post Your First Listing</a>
+</div>
+{% endfor %}
+{% endblock %}

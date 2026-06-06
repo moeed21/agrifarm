@@ -1,0 +1,564 @@
+{% extends 'core/base.html' %}
+{% load core_extras %}
+{% block title %}Seller Dashboard{% endblock %}
+{% block extra_css %}
+<style>
+.dash{display:grid;grid-template-columns:230px 1fr;gap:20px;padding:24px 0 50px;align-items:start}
+.pnav{background:#fff;border:2px solid var(--border);border-radius:var(--r16);overflow:hidden;position:sticky;top:80px}
+.pnav-user{background:linear-gradient(135deg,var(--g800),var(--g600));padding:22px;text-align:center}
+.pnav-av{width:60px;height:60px;border-radius:50%;background:rgba(255,255,255,.2);border:3px solid rgba(255,255,255,.35);margin:0 auto 10px;display:flex;align-items:center;justify-content:center;font-family:var(--serif);font-size:22px;color:#fff;overflow:hidden;flex-shrink:0}
+.pnav-av img{width:100%;height:100%;object-fit:cover}
+.pnav-name{font-weight:800;font-size:14px;color:#fff}
+.pnav-role{font-size:11px;color:rgba(255,255,255,.6);margin-top:2px}
+.pnav-link{display:flex;align-items:center;gap:10px;padding:11px 16px;font-size:13px;font-weight:700;color:var(--ink2);cursor:pointer;transition:all .15s;border-left:3px solid transparent;text-decoration:none}
+.pnav-link:hover,.pnav-link.on{background:var(--g50);color:var(--g700);border-left-color:var(--g500)}
+/* Stat cards */
+.stat-row{display:grid;grid-template-columns:repeat(3,1fr);gap:13px;margin-bottom:18px}
+.stat{background:#fff;border:2px solid var(--border);border-radius:var(--r16);padding:18px;text-align:center;border-top:4px solid}
+.stat-val{font-family:var(--serif);font-size:26px;color:var(--ink)}
+.stat-lbl{font-size:10px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.7px;margin-top:5px}
+/* Verification steps */
+.vf-step{display:flex;align-items:flex-start;gap:14px;padding:14px;background:var(--g50);border:2px solid var(--border);border-radius:var(--r10);margin-bottom:10px}
+.vf-num{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:13px;flex-shrink:0}
+.vf-done{background:var(--g500);color:#fff}
+.vf-pending{background:var(--border);color:var(--muted)}
+.vf-title{font-weight:800;font-size:13.5px;color:var(--ink)}
+.vf-sub{font-size:12px;color:var(--muted);margin-top:2px}
+/* Listing row */
+.lr{display:flex;align-items:center;gap:11px;padding:12px;background:var(--g50);border:2px solid var(--border);border-radius:var(--r10);margin-bottom:8px;transition:all .15s}
+.lr:hover{border-color:var(--g300)}
+.lr-em{width:48px;height:48px;border-radius:var(--r10);display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0;background:#fff}
+.lr-name{font-weight:800;font-size:13px;color:var(--ink)}
+.lr-meta{font-size:11px;color:var(--muted);margin-top:2px}
+/* CNIC upload zones */
+.cnic-upload-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:12px 0}
+.cnic-zone{border:2.5px dashed var(--border);border-radius:var(--r10);padding:0;background:var(--g50);transition:all .2s;cursor:pointer;position:relative;overflow:hidden;min-height:130px}
+.cnic-zone:hover{border-color:var(--g400);background:#f0faf3}
+.cnic-zone.has-file{border-style:solid;border-color:var(--g400)}
+.cnic-zone-inner{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:18px;height:100%;gap:6px}
+.cnic-zone-icon{font-size:32px;line-height:1}
+.cnic-zone-lbl{font-size:12px;font-weight:800;color:var(--ink);text-align:center}
+.cnic-zone-hint{font-size:10px;color:var(--muted);text-align:center}
+.cnic-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.cnic-preview{width:100%;height:100%;object-fit:cover;border-radius:8px;display:block;position:absolute;inset:0}
+/* Status badges */
+.cnic-badge-approved{display:inline-flex;align-items:center;gap:6px;background:#e8f8ee;border:1.5px solid #4caf7d;color:#1b6b3a;border-radius:20px;padding:5px 14px;font-size:12px;font-weight:800}
+.cnic-badge-rejected{display:inline-flex;align-items:center;gap:6px;background:#fff0f0;border:1.5px solid #f87171;color:#991b1b;border-radius:20px;padding:5px 14px;font-size:12px;font-weight:800}
+.cnic-badge-pending{display:inline-flex;align-items:center;gap:6px;background:#fffbeb;border:1.5px solid #f59e0b;color:#92400e;border-radius:20px;padding:5px 14px;font-size:12px;font-weight:800}
+/* Listing lock banner */
+.listing-locked{background:linear-gradient(135deg,#fff7ed,#fef3c7);border:2px solid #f59e0b;border-radius:var(--r16);padding:28px;text-align:center}
+.listing-locked-icon{font-size:40px;margin-bottom:10px}
+.listing-locked-title{font-weight:900;font-size:17px;color:#78350f;margin-bottom:6px}
+.listing-locked-sub{font-size:13px;color:#92400e;margin-bottom:16px;line-height:1.5}
+/* Upload spinner */
+.uploading-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;display:none}
+.uploading-spinner{width:52px;height:52px;border:5px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .8s linear infinite;margin-bottom:14px}
+.uploading-msg{color:#fff;font-weight:800;font-size:15px}
+@keyframes spin{to{transform:rotate(360deg)}}
+</style>
+{% endblock %}
+{% block content %}
+<div class="wrap"><div class="dash">
+  <!-- Sidebar nav -->
+  <aside>
+    <div class="pnav">
+      <div class="pnav-user">
+        <div class="pnav-av">{% if u.avatar %}<img src="{{ u.avatar.url }}" alt="{{ u.name }}">{% else %}{{ u.name|slice:":1" }}{% endif %}</div>
+        <div class="pnav-name">{{ u.name }}</div>
+        <div class="pnav-role">🌾 Seller
+          {% if u.verified_phone or u.cnic %}<span style="background:rgba(58,170,85,.3);border:1px solid rgba(58,170,85,.5);border-radius:10px;padding:2px 8px;font-size:9px;font-weight:800;margin-left:6px">✅ VERIFIED</span>{% endif %}
+        </div>
+      </div>
+      <div style="padding:8px 0">
+        <a href="#overview" class="pnav-link on">📊 Overview</a>
+        <a href="#verification" class="pnav-link">🔐 Verification</a>
+        <a href="#post" class="pnav-link">📦 Post Listing</a>
+        <a href="#listings" class="pnav-link">📋 My Listings</a>
+        <a href="#orders" class="pnav-link">📬 Orders</a>
+        <a href="#profile" class="pnav-link">⚙️ Edit Profile</a>
+      </div>
+    </div>
+    <a href="{% url 'logout' %}" class="btn btn-outline btn-block btn-sm" style="margin-top:10px;justify-content:center">🚪 Logout</a>
+  </aside>
+
+  <div>
+    {% if msg %}<div class="alert {% if '✅' in msg %}alert-success{% elif '❌' in msg %}alert-danger{% else %}alert-info{% endif %}" style="margin-bottom:16px" id="profileAlert"><span class="alert-msg">{{ msg|safe }}</span></div>{% endif %}
+
+    <!-- Stats -->
+    <div id="overview" class="stat-row">
+      <div class="stat" style="border-top-color:var(--g400)"><div class="stat-val">{{ my_listings|length }}</div><div class="stat-lbl">My Listings</div></div>
+      <div class="stat" style="border-top-color:var(--gold)"><div class="stat-val">{{ orders|length }}</div><div class="stat-lbl">Orders</div></div>
+      <div class="stat" style="border-top-color:var(--blue)"><div class="stat-val">{{ u.city }}</div><div class="stat-lbl">City</div></div>
+    </div>
+
+    <!-- Verification -->
+    <div id="verification" class="card" style="margin-bottom:16px">
+      <div class="card-hd">🔐 Seller Verification</div>
+      <div class="card-bd">
+        <div class="vf-step">
+          <div class="vf-num {% if u.verified_phone %}vf-done{% else %}vf-pending{% endif %}">{% if u.verified_phone %}✓{% else %}1{% endif %}</div>
+          <div style="flex:1">
+            <div class="vf-title">Mobile Phone OTP</div>
+            <div class="vf-sub">Verify your phone number via SMS OTP</div>
+            {% if not u.verified_phone %}
+            <form method="post" style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">{% csrf_token %}
+              <input type="hidden" name="action" value="send_otp">
+              <input type="tel" name="phone_display" class="finp" style="width:auto;flex:1" value="{{ u.phone }}" placeholder="03XX-XXXXXXX">
+              <button type="submit" class="btn btn-primary btn-sm">Send OTP</button>
+            </form>
+            <form method="post" style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">{% csrf_token %}
+              <input type="hidden" name="action" value="verify_otp">
+              <input type="text" name="otp" class="finp" style="width:auto;flex:1" placeholder="Enter 6-digit OTP (demo: 123456)" maxlength="6">
+              <button type="submit" class="btn btn-outline btn-sm">Verify</button>
+            </form>{% else %}<div class="verified-chip" style="margin-top:8px">✅ Phone Verified</div>{% endif %}
+          </div>
+        </div>
+        <div class="vf-step">
+          <div class="vf-num {% if u.cnic_verified == 'approved' %}vf-done{% else %}vf-pending{% endif %}">{% if u.cnic_verified == 'approved' %}✓{% else %}2{% endif %}</div>
+          <div style="flex:1">
+            <div class="vf-title">CNIC / National ID Verification</div>
+            <div class="vf-sub">Upload clear photos of both sides of your CNIC. Our team will review and approve your account.</div>
+
+            <!-- Current Status Badge -->
+            <div style="margin:10px 0">
+              {% if u.cnic_verified == 'approved' %}
+                <span class="cnic-badge-approved">✅ CNIC Verified</span>
+              {% elif u.cnic_verified == 'rejected' %}
+                <span class="cnic-badge-rejected">❌ Verification Failed — Re-upload required</span>
+              {% elif u.cnic_verified == 'pending' %}
+                <span class="cnic-badge-pending">⏳ Pending Manual Review</span>
+              {% else %}
+                <span style="font-size:11px;color:var(--muted)">Not submitted yet</span>
+              {% endif %}
+            </div>
+
+            <!-- CNIC Number + Name (always editable) -->
+            <form method="post" style="margin-bottom:10px">
+              {% csrf_token %}
+              <input type="hidden" name="action" value="save_profile">
+              <div class="frow">
+                <div class="fgrp"><label>CNIC Number</label><input type="text" name="cnic" class="finp" value="{{ u.cnic|default:'' }}" placeholder="35202-1234567-1" pattern="\d{5}-\d{7}-\d{1}"></div>
+                <div class="fgrp"><label>Name on CNIC</label><input type="text" name="cnic_name" class="finp" value="{{ u.cnic_name|default:'' }}"></div>
+              </div>
+              <button type="submit" class="btn btn-outline btn-sm">💾 Save CNIC Number</button>
+            </form>
+
+            <!-- CNIC Photo Upload Form -->
+            {% if u.cnic_verified != 'approved' %}
+            <form method="post" enctype="multipart/form-data" id="cnicUploadForm">
+              {% csrf_token %}
+              <input type="hidden" name="action" value="upload_cnic_docs">
+
+              <div style="font-size:12px;font-weight:700;color:var(--ink);margin-bottom:8px">📸 Upload CNIC Photos for Verification</div>
+              <div class="cnic-upload-grid">
+
+                <!-- Front Side -->
+                <div>
+                  <div style="font-size:11px;font-weight:800;color:var(--g700);margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px">Front Side</div>
+                  <label class="cnic-zone" id="frontZone" for="cnicFrontInput">
+                    <div class="cnic-zone-inner" id="frontInner">
+                      <div class="cnic-zone-icon">🪪</div>
+                      <div class="cnic-zone-lbl">Click or drag photo here</div>
+                      <div class="cnic-zone-hint">Shows your photo &amp; CNIC number</div>
+                    </div>
+                    {% if u.cnic_front %}
+                      <img src="{{ u.cnic_front }}" class="cnic-preview" id="frontPreviewImg" alt="CNIC Front">
+                    {% endif %}
+                    <input type="file" id="cnicFrontInput" name="cnic_front" accept="image/*" required>
+                  </label>
+                  <div style="font-size:10px;color:var(--muted);margin-top:4px">JPG/PNG, max 5MB</div>
+                </div>
+
+                <!-- Back Side -->
+                <div>
+                  <div style="font-size:11px;font-weight:800;color:var(--g700);margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px">Back Side</div>
+                  <label class="cnic-zone" id="backZone" for="cnicBackInput">
+                    <div class="cnic-zone-inner" id="backInner">
+                      <div class="cnic-zone-icon">📋</div>
+                      <div class="cnic-zone-lbl">Click or drag photo here</div>
+                      <div class="cnic-zone-hint">Shows your address &amp; barcode</div>
+                    </div>
+                    {% if u.cnic_back %}
+                      <img src="{{ u.cnic_back }}" class="cnic-preview" id="backPreviewImg" alt="CNIC Back">
+                    {% endif %}
+                    <input type="file" id="cnicBackInput" name="cnic_back" accept="image/*" required>
+                  </label>
+                  <div style="font-size:10px;color:var(--muted);margin-top:4px">JPG/PNG, max 5MB</div>
+                </div>
+
+              </div><!-- /grid -->
+
+              <!-- Tips -->
+              <div style="background:#f0fdf4;border:1.5px solid #bbf7d0;border-radius:8px;padding:10px 14px;margin-bottom:12px;font-size:11px;color:#166534;line-height:1.6">
+                <strong>📌 Tips for fast approval:</strong><br>
+                • Ensure the full card is visible with no cutoffs<br>
+                • Use good lighting — avoid glare or shadows<br>
+                • Keep the card flat and text clearly readable
+              </div>
+
+              <button type="submit" class="btn btn-primary" id="cnicSubmitBtn" onclick="showVerifyingOverlay()">
+                📋 Submit for Verification
+              </button>
+            </form>
+            {% else %}
+            <!-- Already approved — show existing images read-only -->
+            {% if u.cnic_front or u.cnic_back %}
+            <div class="cnic-upload-grid" style="margin-top:10px">
+              {% if u.cnic_front %}
+              <div>
+                <div style="font-size:11px;font-weight:800;color:var(--g700);margin-bottom:5px">FRONT</div>
+                <img src="{{ u.cnic_front }}" style="width:100%;border-radius:var(--r10);border:2px solid var(--g300);object-fit:cover;max-height:120px" alt="CNIC Front">
+              </div>
+              {% endif %}
+              {% if u.cnic_back %}
+              <div>
+                <div style="font-size:11px;font-weight:800;color:var(--g700);margin-bottom:5px">BACK</div>
+                <img src="{{ u.cnic_back }}" style="width:100%;border-radius:var(--r10);border:2px solid var(--g300);object-fit:cover;max-height:120px" alt="CNIC Back">
+              </div>
+              {% endif %}
+            </div>
+            {% endif %}
+            {% endif %}
+          </div>
+        </div>
+        <div class="vf-step">
+          <div class="vf-num {% if u.bank_iban %}vf-done{% else %}vf-pending{% endif %}">{% if u.bank_iban %}✓{% else %}3{% endif %}</div>
+          <div style="flex:1">
+            <div class="vf-title">Payment Accounts</div>
+            <div class="vf-sub">Add bank account & mobile wallets to receive payments</div>
+            <form method="post" style="margin-top:10px">{% csrf_token %}
+              <input type="hidden" name="action" value="save_profile">
+              <div class="frow">
+                <div class="fgrp"><label>IBAN (Bank)</label><input type="text" name="bank_iban" class="finp" value="{{ u.bank_iban|default:'' }}" placeholder="PK36HABB0000001123456702"></div>
+                <div class="fgrp"><label>Bank Name</label><select name="bank_name" class="finp"><option>HBL</option><option>MCB</option><option>UBL</option><option>Meezan</option><option>Allied</option><option>Habib Metro</option></select></div>
+              </div>
+              <div class="frow">
+                <div class="fgrp"><label>Account Title</label><input type="text" name="bank_title" class="finp" value="{{ u.bank_title|default:'' }}" placeholder="Your full name"></div>
+                <div class="fgrp"><label>JazzCash #</label><input type="tel" name="jazzcash" class="finp" value="{{ u.jazzcash|default:'' }}" placeholder="03XX-XXXXXXX"></div>
+              </div>
+              <div class="fgrp"><label>EasyPaisa #</label><input type="tel" name="easypaisa" class="finp" value="{{ u.easypaisa|default:'' }}" placeholder="03XX-XXXXXXX"></div>
+              <button type="submit" class="btn btn-primary btn-sm">Save Payment Details</button>
+              {% if u.bank_iban %}<span class="verified-chip" style="margin-left:8px">✅ Bank Added</span>{% endif %}
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Post Listing -->
+    <!-- Stats Row -->
+    {% if total_sold_kg or total_revenue or active_listings %}
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px">
+      <div style="background:#fff;border:1.5px solid var(--border);border-radius:var(--r16);padding:16px;text-align:center">
+        <div style="font-size:26px;font-weight:900;color:var(--g700)">{{ active_listings }}</div>
+        <div style="font-size:12px;color:var(--muted);font-weight:600">Active Listings</div>
+      </div>
+      <div style="background:#fff;border:1.5px solid var(--border);border-radius:var(--r16);padding:16px;text-align:center">
+        <div style="font-size:26px;font-weight:900;color:var(--g700)">{{ total_sold_kg|default:0 }} kg</div>
+        <div style="font-size:12px;color:var(--muted);font-weight:600">Total Sold</div>
+      </div>
+      <div style="background:#fff;border:1.5px solid var(--border);border-radius:var(--r16);padding:16px;text-align:center">
+        <div style="font-size:22px;font-weight:900;color:var(--g700)">{{ total_revenue|default:0 }} PKR</div>
+        <div style="font-size:12px;color:var(--muted);font-weight:600">Total Revenue</div>
+      </div>
+    </div>
+    {% endif %}
+
+    <div id="post" class="card" style="margin-bottom:16px">
+      <div class="card-hd">📦 Post a New Listing</div>
+      <div class="card-bd">
+
+        {% if u.cnic_verified != 'approved' %}
+        <!-- LOCKED: CNIC not verified -->
+        <div class="listing-locked">
+          <div class="listing-locked-icon">🔒</div>
+          <div class="listing-locked-title">CNIC Verification Required</div>
+          <div class="listing-locked-sub">
+            You must verify your CNIC identity before you can post listings on AgriFarm.
+            This protects buyers and ensures marketplace trust.
+            {% if u.cnic_verified == 'pending' %}
+              <br><br>⏳ <strong>Your documents are under review.</strong> You'll be able to post listings once approved.
+            {% elif u.cnic_verified == 'rejected' %}
+              <br><br>❌ <strong>Your last submission was rejected.</strong> Please re-upload clear, legible photos of your CNIC.
+            {% endif %}
+          </div>
+          <a href="#verification" class="btn btn-primary">🪪 Complete CNIC Verification →</a>
+        </div>
+
+        {% else %}
+        <!-- UNLOCKED: CNIC verified —  show full form -->
+        <form method="post" enctype="multipart/form-data">{% csrf_token %}
+          <input type="hidden" name="action" value="post_listing">
+          <datalist id="crop-suggestions">
+            {% for c in crops %}<option value="{{ c }}">{% endfor %}
+          </datalist>
+          <div style="display:grid;grid-template-columns:repeat(2,1fr) repeat(2,1fr);gap:12px">
+            <div class="fgrp">
+              <label>Crop *</label>
+              <input type="text" name="crop" class="finp" list="crop-suggestions"
+                     placeholder="e.g. Tomato, Aloe Vera, Soybean…"
+                     autocomplete="off" required
+                     oninput="this.value=this.value.replace(/\b\w/g,c=>c.toUpperCase())">
+              <div class="finp-hint" style="margin-top:4px">Type any crop — not just the list</div>
+            </div>
+            <div class="fgrp">
+              <label>Crop Type *</label>
+              <select name="crop_type" class="finp" required>
+                <option value="">— Select type —</option>
+                <option value="Vegetables">🥦 Vegetable</option>
+                <option value="Fruits">🍎 Fruit</option>
+                <option value="Grains &amp; Pulses">🌾 Grain &amp; Pulse</option>
+                <option value="Cash Crops">🌿 Cash Crop</option>
+                <option value="Other">📦 Other</option>
+              </select>
+            </div>
+            <div class="fgrp"><label>City *</label><select name="city" class="finp">{% for c in cities %}<option {% if c == u.city %}selected{% endif %}>{{ c }}</option>{% endfor %}</select></div>
+            <div class="fgrp"><label>Market / Mandi</label><input type="text" name="market" class="finp" placeholder="Mandi name" value="{{ u.city }} Sabzi Mandi"></div>
+            <div class="fgrp"><label>Price (PKR/kg) *</label><input type="number" name="price" class="finp" placeholder="150" min="1" required></div>
+            <div class="fgrp"><label>Quantity (kg) *</label><input type="number" name="qty" class="finp" placeholder="500" min="1" required></div>
+          </div>
+          <div class="fgrp"><label>Description</label><textarea name="desc" class="finp" placeholder="Grade, packaging, freshness, transport info..."></textarea></div>
+          <!-- Product Images -->
+          <div class="fgrp">
+            <label>📸 Product Photos (up to 4 images)</label>
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:6px">
+              {% for i in "1234" %}
+              <div>
+                <label for="img{{ forloop.counter }}" style="display:block;width:100%;height:80px;border:2px dashed var(--border);border-radius:var(--r10);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:24px;background:var(--g50);transition:.15s" id="imgLabel{{ forloop.counter }}">📷</label>
+                <input type="file" id="img{{ forloop.counter }}" name="image{{ forloop.counter }}" accept="image/*" style="display:none" onchange="previewImg(this,'imgLabel{{ forloop.counter }}')">
+              </div>
+              {% endfor %}
+            </div>
+            <div class="finp-hint">JPG/PNG, max 5MB each. First photo is the main display image.</div>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button type="submit" class="btn btn-primary">🌿 Post Listing</button>
+            <a href="{% url 'marketplace' %}" class="btn btn-outline">📊 View Market Prices</a>
+          </div>
+        </form>
+        {% endif %}
+
+      </div>
+    </div>
+
+    <!-- My Listings -->
+    <div id="listings" class="card" style="margin-bottom:16px">
+      <div class="card-hd">📋 My Listings ({{ my_listings|length }})</div>
+      <div class="card-bd">
+        {% for l in my_listings %}
+        <div class="lr" style="align-items:flex-start">
+          {% if l.primary_image %}
+            <img src="{{ l.primary_image }}" style="width:56px;height:56px;border-radius:8px;object-fit:cover;flex-shrink:0" alt="{{ l.crop }}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+            <div class="lr-em" style="display:none">{{ emoji|dict_get:l.crop|default:'🌿' }}</div>
+          {% else %}
+            <div class="lr-em">{{ emoji|dict_get:l.crop|default:'🌿' }}</div>
+          {% endif %}
+          <div style="flex:1">
+            <div class="lr-name">{{ l.crop }} — {{ l.city }}</div>
+            <div class="lr-meta">📦 {{ l.qty }}kg avail · 📤 {{ l.qty_sold }}kg sold · 🏪 {{ l.market|default:"Direct" }}</div>
+            <div style="display:flex;gap:8px;margin-top:4px;flex-wrap:wrap">
+              <span class="badge {% if l.status == 'active' %}badge-active{% elif l.status == 'sold' %}badge-confirmed{% else %}badge-cancelled{% endif %}">{{ l.status|upper }}</span>
+              {% if l.avg_rating %}<span style="font-size:11px;color:#f0b429;font-weight:700">★ {{ l.avg_rating }} ({{ l.review_count }})</span>{% endif %}
+            </div>
+          </div>
+          <div style="text-align:right;margin-right:8px">
+            <div style="font-family:var(--serif);font-size:17px;font-weight:900;color:var(--g700)">{{ l.price }} PKR/kg</div>
+            <a href="{% url 'listing_detail' l.id %}" style="font-size:11px;color:var(--g600)">View →</a>
+          </div>
+          <form method="post" style="flex-shrink:0">{% csrf_token %}
+            <input type="hidden" name="action" value="delete_listing">
+            <input type="hidden" name="lid" value="{{ l.id }}">
+            <button type="submit" class="btn btn-danger btn-sm" style="font-size:11px;padding:5px 10px" onclick="return confirm('Remove this listing?')">✕ Remove</button>
+          </form>
+        </div>
+        {% empty %}<div style="text-align:center;padding:28px;color:var(--muted)">No listings yet. Post your first one above!</div>{% endfor %}
+      </div>
+    </div>
+
+    <!-- Orders -->
+    <div id="orders" class="card" style="margin-bottom:16px">
+      <div class="card-hd">📬 Orders Received ({{ orders|length }}) &nbsp;·&nbsp; <span style="font-size:11px;font-weight:600;opacity:.7">Total Revenue: {{ total_revenue }} PKR</span></div>
+      <div class="card-bd">
+        {% for o in orders %}
+        <div class="lr" style="flex-wrap:wrap;gap:10px">
+          <div style="flex:1;min-width:180px">
+            <div class="lr-name">{{ o.crop }} — {{ o.city }} <span style="font-family:monospace;font-size:10px;color:var(--muted)">{{ o.id|slice:"-8:" }}</span></div>
+            <div class="lr-meta">👤 {{ o.buyer }} · 📦 {{ o.qty }}kg · 💳 {{ o.pay_method }} · 📅 {{ o.date }}</div>
+            <div style="margin-top:4px"><span class="badge badge-{{ o.status }}">{{ o.status|upper }}</span></div>
+          </div>
+          <div style="text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:6px">
+            <div style="font-family:var(--serif);font-size:17px;color:var(--g700)">{{ o.total|floatformat:0 }} PKR</div>
+            {% if o.status == 'pending' or o.status == 'confirmed' %}
+            <form method="post" style="display:flex;gap:6px">{% csrf_token %}
+              <input type="hidden" name="action" value="update_order_status">
+              <input type="hidden" name="order_id" value="{{ o.id }}">
+              <select name="order_status" class="finp" style="padding:4px 8px;font-size:11px;width:auto">
+                <option value="confirmed" {% if o.status == 'confirmed' %}selected{% endif %}>Confirmed</option>
+                <option value="delivered">Delivered</option>
+                <option value="cancelled">Cancelled</option>
+              </select>
+              <button type="submit" class="btn btn-primary btn-sm" style="padding:5px 10px;font-size:11px">Update</button>
+            </form>
+            {% endif %}
+          </div>
+        </div>
+        {% empty %}<div style="text-align:center;padding:28px;color:var(--muted)">No orders yet</div>{% endfor %}
+      </div>
+    </div>
+
+    <!-- Edit Profile -->
+    <div id="profile" class="card">
+      <div class="card-hd">⚙️ Edit Profile</div>
+      <div class="card-bd">
+        <form method="post" enctype="multipart/form-data">{% csrf_token %}
+          <input type="hidden" name="action" value="save_profile">
+          <!-- Avatar -->
+          <div class="fgrp" style="display:flex;align-items:center;gap:16px;margin-bottom:18px">
+            {% if u.avatar %}
+              <img src="{{ u.avatar.url }}" style="width:72px;height:72px;border-radius:50%;object-fit:cover;border:3px solid var(--g300)" id="avatarPreview">
+            {% else %}
+              <div id="avatarPreview" style="width:72px;height:72px;border-radius:50%;background:var(--g400);display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:900;color:#fff">{{ u.name|slice:":1" }}</div>
+            {% endif %}
+            <div>
+              <label style="display:inline-block;cursor:pointer;background:var(--g50);border:2px solid var(--g200);border-radius:var(--r10);padding:8px 14px;font-size:12px;font-weight:700;color:var(--g700)">
+                📷 Change Photo
+                <input type="file" name="avatar" accept="image/*" style="display:none" onchange="previewAvatar(this)">
+              </label>
+              <div class="finp-hint" style="margin-top:5px">JPG/PNG, max 3MB</div>
+            </div>
+          </div>
+          <div class="frow">
+            <div class="fgrp"><label>Full Name</label><input type="text" name="name" class="finp" value="{{ u.name }}"></div>
+            <div class="fgrp"><label>Phone</label><input type="tel" name="phone" class="finp" value="{{ u.phone|default:'' }}"></div>
+          </div>
+          <div class="fgrp"><label>City</label><select name="city" class="finp">{% for c in cities %}<option {% if c == u.city %}selected{% endif %}>{{ c }}</option>{% endfor %}</select></div>
+          <button type="submit" class="btn btn-primary">💾 Save Profile</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div></div>
+
+<!-- Verifying overlay (shown while Gemini processes) -->
+<div class="uploading-overlay" id="verifyingOverlay">
+  <div class="uploading-spinner"></div>
+  <div class="uploading-msg">⏳ Submitting your documents…</div>
+  <div style="color:rgba(255,255,255,.7);font-size:12px;margin-top:8px">This takes about 5–10 seconds</div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+/* ── Auto-dismiss alert after 5 seconds ─────────────────── */
+(function(){
+  const alert = document.getElementById('profileAlert');
+  if (alert) {
+    setTimeout(() => {
+      alert.style.transition = 'opacity .5s';
+      alert.style.opacity = '0';
+      setTimeout(() => alert.remove(), 500);
+    }, 5000);
+  }
+})();
+
+/* ── CNIC photo preview ─────────────────────────────────────── */
+function setupCnicZone(inputId, zoneId, innerId, existingImgId) {
+  const input = document.getElementById(inputId);
+  const zone  = document.getElementById(zoneId);
+  const inner = document.getElementById(innerId);
+  if (!input) return;
+
+  function showPreview(file) {
+    const reader = new FileReader();
+    reader.onload = e => {
+      // Remove placeholder inner content
+      inner.style.display = 'none';
+      // Hide any existing server-side preview
+      const existing = document.getElementById(existingImgId);
+      if (existing) existing.style.display = 'none';
+      // Create or update preview img
+      let img = zone.querySelector('.cnic-preview-js');
+      if (!img) {
+        img = document.createElement('img');
+        img.className = 'cnic-preview cnic-preview-js';
+        zone.appendChild(img);
+      }
+      img.src = e.target.result;
+      zone.classList.add('has-file');
+    };
+    reader.readAsDataURL(file);
+  }
+
+  input.addEventListener('change', () => {
+    if (input.files && input.files[0]) showPreview(input.files[0]);
+  });
+
+  // Drag and drop
+  zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('has-file'); });
+  zone.addEventListener('dragleave', () => zone.classList.remove('has-file'));
+  zone.addEventListener('drop', e => {
+    e.preventDefault();
+    const files = e.dataTransfer.files;
+    if (files && files[0]) {
+      // Transfer file to the input
+      const dt = new DataTransfer();
+      dt.items.add(files[0]);
+      input.files = dt.files;
+      showPreview(files[0]);
+    }
+  });
+}
+
+setupCnicZone('cnicFrontInput', 'frontZone', 'frontInner', 'frontPreviewImg');
+setupCnicZone('cnicBackInput',  'backZone',  'backInner',  'backPreviewImg');
+
+/* ── Verifying overlay ──────────────────────────────────────── */
+function showVerifyingOverlay() {
+  const front = document.getElementById('cnicFrontInput');
+  const back  = document.getElementById('cnicBackInput');
+  if (front && front.files.length === 0) return; // let browser validation handle it
+  if (back  && back.files.length  === 0) return;
+  const overlay = document.getElementById('verifyingOverlay');
+  if (overlay) overlay.style.display = 'flex';
+}
+
+/* ── Listing image preview ──────────────────────────────────── */
+function previewImg(input, labelId) {
+  if (input.files && input.files[0]) {
+    const reader = new FileReader();
+    reader.onload = e => {
+      const lbl = document.getElementById(labelId);
+      lbl.innerHTML = '';
+      lbl.style.padding = '0';
+      lbl.style.overflow = 'hidden';
+      const img = document.createElement('img');
+      img.src = e.target.result;
+      img.style.cssText = 'width:100%;height:100%;object-fit:cover;border-radius:8px';
+      lbl.appendChild(img);
+    };
+    reader.readAsDataURL(input.files[0]);
+  }
+}
+
+/* ── Avatar preview ─────────────────────────────────────────── */
+function previewAvatar(input) {
+  if (input.files && input.files[0]) {
+    const reader = new FileReader();
+    reader.onload = e => {
+      const el = document.getElementById('avatarPreview');
+      if (el.tagName === 'IMG') {
+        el.src = e.target.result;
+      } else {
+        const img = document.createElement('img');
+        img.src = e.target.result;
+        img.id = 'avatarPreview';
+        img.style.cssText = 'width:72px;height:72px;border-radius:50%;object-fit:cover;border:3px solid var(--g300)';
+        el.replaceWith(img);
+      }
+    };
+    reader.readAsDataURL(input.files[0]);
+  }
+}
+</script>
+{% endblock %}

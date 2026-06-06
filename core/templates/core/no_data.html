@@ -1,0 +1,17 @@
+{% extends 'core/base.html' %}
+{% block title %}Dataset Missing{% endblock %}
+{% block content %}
+<div style="max-width:560px;margin:80px auto;padding:0 24px;text-align:center">
+  <div style="font-size:56px;margin-bottom:16px">🗄️</div>
+  <div style="font-family:var(--serif);font-size:26px;color:var(--ink);margin-bottom:10px">Dataset Not Found</div>
+  <div style="font-size:14px;color:var(--muted);line-height:1.7;margin-bottom:24px">Place <strong>clean_crop_prices.csv</strong> in the project root folder and restart.</div>
+  <div style="background:var(--g50);border:2px solid var(--border);border-radius:var(--r10);padding:16px;font-family:monospace;font-size:13px;text-align:left;margin-bottom:24px;color:var(--g800)">
+    📁 AgriFarm_django/<br>
+    &nbsp;&nbsp;&nbsp;&nbsp;├── <strong style="color:var(--g600)">clean_crop_prices.csv</strong> &nbsp;← place here<br>
+    &nbsp;&nbsp;&nbsp;&nbsp;├── manage.py<br>
+    &nbsp;&nbsp;&nbsp;&nbsp;└── core/
+  </div>
+  {% if error %}<div style="background:#fef2f2;border:2px solid #fecaca;border-radius:var(--r10);padding:12px;font-size:12px;color:var(--red);font-family:monospace;text-align:left;margin-bottom:16px">{{ error }}</div>{% endif %}
+  <code style="font-size:13px;color:var(--muted)">python manage.py runserver</code>
+</div>
+{% endblock %}

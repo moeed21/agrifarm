@@ -1,0 +1,476 @@
+{% extends 'core/base.html' %}
+{% load core_extras %}
+{% block title %}{% if filter_crop %}{{ filter_crop }} — {% endif %}Marketplace · AgriFarm Pakistan{% endblock %}
+
+{% block extra_css %}
+<style>
+/* ── HERO BANNER ── */
+.mkt-hero{position:relative;overflow:hidden;background:#071a07;padding:0}
+.mkt-hero-video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0;opacity:.55}
+.mkt-hero-overlay{position:absolute;inset:0;z-index:1;background:linear-gradient(135deg,rgba(7,26,7,.88) 0%,rgba(13,43,13,.72) 50%,rgba(26,74,26,.65) 100%)}
+.mkt-hero-inner{max-width:1300px;margin:0 auto;padding:52px 24px 44px;position:relative;z-index:2}
+.mkt-hero-badge{display:inline-flex;align-items:center;gap:7px;background:rgba(245,166,35,.15);border:1px solid rgba(245,166,35,.35);color:#f5a623;font-size:10px;font-weight:800;letter-spacing:1px;padding:5px 14px;border-radius:20px;margin-bottom:18px;text-transform:uppercase}
+.mkt-hero-badge-dot{width:7px;height:7px;border-radius:50%;background:#f5a623;animation:pulse 1.8s infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(1.4)}}
+.mkt-hero-title{font-family:var(--serif);font-size:42px;font-weight:900;color:#fff;line-height:1.1;margin-bottom:10px;max-width:680px}
+.mkt-hero-title span{color:#f5a623}
+.mkt-hero-sub{font-size:15px;color:rgba(255,255,255,.5);max-width:500px;line-height:1.7;margin-bottom:28px}
+.mkt-hero-stats{display:flex;gap:28px;flex-wrap:wrap}
+.mkt-hero-stat{text-align:center}
+.mkt-hero-stat-n{font-size:22px;font-weight:800;color:#fff}
+.mkt-hero-stat-l{font-size:10px;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.7px;margin-top:2px}
+
+/* ── SEARCH BAR ── */
+.mkt-search-wrap{background:#fff;border-bottom:1px solid var(--border);position:sticky;top:58px;z-index:800;box-shadow:0 2px 8px rgba(0,0,0,.06)}
+.mkt-search-inner{max-width:1300px;margin:0 auto;padding:10px 24px;display:flex;align-items:center;gap:10px}
+.mkt-search-box{flex:1;position:relative}
+.mkt-search-icon{position:absolute;left:13px;top:50%;transform:translateY(-50%);font-size:16px;pointer-events:none}
+.mkt-search-inp{width:100%;border:1.5px solid var(--border);border-radius:24px;padding:10px 16px 10px 40px;font-size:13px;background:#f8faf8;color:var(--ink);transition:all .15s}
+.mkt-search-inp:focus{border-color:var(--g400);background:#fff;box-shadow:0 0 0 3px rgba(61,158,61,.1)}
+.mkt-search-inp::placeholder{color:var(--muted)}
+.mkt-sort-pill{display:flex;gap:4px;background:#f0f9f0;border:1px solid var(--g200);border-radius:20px;padding:4px}
+.sort-p{padding:5px 13px;border-radius:16px;font-size:11px;font-weight:700;color:var(--g700);cursor:pointer;text-decoration:none;transition:all .15s;white-space:nowrap}
+.sort-p.on{background:var(--g700);color:#fff}
+.mkt-count-badge{background:var(--g100);color:var(--g700);font-size:11px;font-weight:700;padding:5px 12px;border-radius:12px;white-space:nowrap}
+
+/* ── FILTER DRAWER ── */
+.filter-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1100;opacity:0;pointer-events:none;transition:opacity .3s}
+.filter-backdrop.open{opacity:1;pointer-events:all}
+.mkt-drawer{position:fixed;top:0;left:0;width:300px;height:100vh;background:#fff;z-index:1101;box-shadow:4px 0 24px rgba(0,0,0,.18);transform:translateX(-100%);transition:transform .35s cubic-bezier(.4,0,.2,1);overflow-y:auto;display:flex;flex-direction:column}
+.mkt-drawer.open{transform:translateX(0)}
+.drawer-hd{background:var(--g800);color:#fff;padding:16px 18px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.drawer-hd-title{font-weight:800;font-size:15px;display:flex;align-items:center;gap:8px}
+.drawer-close{background:rgba(255,255,255,.15);border:none;color:#fff;width:32px;height:32px;border-radius:50%;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .15s;line-height:1}
+.drawer-close:hover{background:rgba(255,255,255,.3)}
+.drawer-body{padding:14px;flex:1;overflow-y:auto}
+.drawer-body .sf{border-radius:var(--r10);margin-bottom:10px;box-shadow:none;border:1.5px solid var(--border)}
+.drawer-body .sf-bd{max-height:220px;overflow-y:auto}
+.drawer-footer{padding:14px;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:8px;flex-shrink:0}
+.filter-btn{display:inline-flex;align-items:center;gap:7px;padding:9px 16px;border-radius:22px;border:1.5px solid var(--g300);background:#fff;color:var(--g700);font-size:13px;font-weight:700;cursor:pointer;transition:all .18s;white-space:nowrap;font-family:var(--font)}
+.filter-btn:hover{background:var(--g50);border-color:var(--g500)}
+.filter-btn.has-filters{background:var(--g700);color:#fff;border-color:var(--g700)}
+.filter-btn-dot{width:8px;height:8px;border-radius:50%;background:#f5a623;display:none}
+.filter-btn.has-filters .filter-btn-dot{display:block}
+
+/* ── MAIN GRID AREA ── */
+.mkt-body{max-width:1300px;margin:0 auto;padding:0 24px 60px}
+.mkt-main{padding-top:16px}
+.filter-chips{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:14px;align-items:center}
+.chip{display:inline-flex;align-items:center;gap:5px;background:#fff;border:1.5px solid var(--g200);color:var(--g700);font-size:11px;font-weight:700;padding:4px 10px;border-radius:20px}
+.chip-x{cursor:pointer;opacity:.6;font-size:13px;line-height:1;margin-left:2px}
+.chip-x:hover{opacity:1;color:var(--red)}
+.chips-clear{font-size:11px;color:var(--muted);text-decoration:underline;cursor:pointer;margin-left:4px}
+
+/* ── PRODUCT GRID ── */
+.mkt-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px}
+.pc{background:#fff;border-radius:var(--r8);border:1px solid var(--border);box-shadow:var(--sh1);overflow:hidden;display:flex;flex-direction:column;transition:all .22s}
+.pc:hover{transform:translateY(-4px);box-shadow:0 8px 24px rgba(0,0,0,.12);border-color:var(--g300)}
+
+/* ── IMAGE SLIDER ── */
+.pc-img{height:170px;position:relative;overflow:hidden;background:linear-gradient(135deg,var(--g50) 0%,#fff 100%);cursor:pointer}
+.pc-slides{display:flex;width:100%;height:100%;transition:transform .35s cubic-bezier(.4,0,.2,1)}
+.pc-slide{min-width:100%;height:100%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:64px}
+.pc-slide img{width:100%;height:100%;object-fit:cover}
+.pc:hover .pc-slide img{transform:scale(1.04);transition:transform .35s}
+.pc-nav{position:absolute;top:50%;transform:translateY(-50%);display:flex;justify-content:space-between;width:100%;padding:0 6px;pointer-events:none;opacity:0;transition:opacity .2s;z-index:5}
+.pc:hover .pc-nav{opacity:1}
+.pc-nav-btn{pointer-events:all;background:rgba(0,0,0,.45);color:#fff;border:none;width:24px;height:24px;border-radius:50%;font-size:11px;cursor:pointer;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
+.pc-nav-btn:hover{background:rgba(0,0,0,.7)}
+.pc-dots{position:absolute;bottom:7px;left:50%;transform:translateX(-50%);display:flex;gap:4px;z-index:5}
+.pc-dot{width:5px;height:5px;border-radius:50%;background:rgba(255,255,255,.5);transition:background .2s}
+.pc-dot.on{background:#fff}
+
+/* image badges */
+.pc-discount{position:absolute;top:8px;left:8px;background:var(--red);color:#fff;font-size:9px;font-weight:800;padding:2px 8px;border-radius:3px;letter-spacing:.2px;z-index:4}
+.pc-ai{position:absolute;top:8px;right:8px;font-size:9px;font-weight:700;padding:2px 8px;border-radius:3px;border:1px solid;z-index:4}
+.pc-img-count{position:absolute;bottom:8px;right:8px;background:rgba(0,0,0,.5);color:#fff;font-size:9px;font-weight:700;padding:2px 7px;border-radius:10px;backdrop-filter:blur(4px);z-index:4;display:flex;align-items:center;gap:3px}
+.pc-sold-bar{position:absolute;bottom:0;left:0;right:0;height:3px;background:var(--g100);z-index:3}
+.pc-sold-fill{height:100%;background:var(--g600);border-radius:0 2px 2px 0}
+.pc-fav{position:absolute;bottom:8px;left:8px;width:28px;height:28px;background:rgba(255,255,255,.9);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;box-shadow:0 1px 4px rgba(0,0,0,.15);opacity:0;transition:opacity .2s;cursor:pointer;z-index:4}
+.pc:hover .pc-fav{opacity:1}
+
+.pc-body{padding:10px 12px;flex:1}
+.pc-crop{font-size:13px;font-weight:800;color:var(--g800);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pc-loc{font-size:10px;color:var(--muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pc-stars{color:var(--gold);font-size:11px;margin:5px 0 3px}
+.pc-price-row{display:flex;align-items:baseline;gap:5px;margin-top:3px}
+.pc-price{font-size:18px;font-weight:800;color:var(--g700)}
+.pc-unit{font-size:10px;color:var(--muted)}
+.pc-orig{font-size:11px;color:var(--muted);text-decoration:line-through}
+.pc-sold{font-size:10px;color:var(--muted);margin-top:3px}
+
+/* ── PRICE SIGNAL BADGES ── */
+.pc-signal{font-size:9px;font-weight:700;border-radius:3px;padding:2px 7px;margin-top:5px;display:inline-block}
+.pc-signal-drop{color:#b45309;background:#fff7ed;border:1px solid #fbbf24}   /* prices falling */
+.pc-signal-rise{color:#166534;background:#f0fdf4;border:1px solid #86efac}   /* prices rising  */
+
+/* ── CARD FOOTER ── */
+.pc-foot{padding:0 10px 10px}
+.pc-btn-view{display:flex;align-items:center;justify-content:space-between;width:100%;background:linear-gradient(135deg,var(--g700),var(--g600));color:#fff;border:none;border-radius:var(--r8);padding:10px 14px;font-size:12px;font-weight:800;cursor:pointer;text-decoration:none;transition:all .18s;box-shadow:0 2px 8px rgba(56,142,60,.2);font-family:var(--font)}
+.pc-btn-view:hover{background:linear-gradient(135deg,var(--g800),var(--g700));transform:translateY(-1px);box-shadow:0 4px 14px rgba(56,142,60,.35)}
+.pc-btn-view-arrow{transition:transform .18s}
+.pc-btn-view:hover .pc-btn-view-arrow{transform:translateX(4px)}
+
+/* ── REVIEW STRIP ── */
+.pc-review-strip{display:flex;align-items:center;justify-content:space-between;padding:8px 0 4px;border-top:1px solid var(--g50);margin-top:6px}
+.pc-review-avatars{display:flex;align-items:center}
+.pc-reviewer-av{width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,var(--g500),var(--g700));border:2px solid #fff;display:flex;align-items:center;justify-content:center;color:#fff;font-size:8px;font-weight:800;flex-shrink:0;margin-left:-6px}
+.pc-reviewer-av:first-child{margin-left:0}
+.pc-reviewer-av img{width:100%;height:100%;object-fit:cover;border-radius:50%}
+.pc-review-meta{display:flex;align-items:center;gap:4px;font-size:10px;color:var(--muted);font-weight:600}
+.pc-review-stars{color:#f0b429;font-size:10px;letter-spacing:-1px}
+.pc-no-reviews{font-size:10px;color:var(--muted);font-style:italic}
+
+/* ── EMPTY STATE ── */
+.mkt-empty{text-align:center;padding:70px 20px;background:#fff;border-radius:var(--r12);border:2px dashed var(--border)}
+.mkt-empty-icon{font-size:56px;margin-bottom:14px}
+.mkt-empty-title{font-size:20px;font-weight:800;color:var(--g800);margin-bottom:6px}
+.mkt-empty-sub{font-size:13px;color:var(--muted)}
+
+/* ── SECTION LABEL ── */
+.section-lbl{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.section-lbl-line{flex:1;height:1px;background:var(--border)}
+.section-lbl-text{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;white-space:nowrap}
+
+/* ── DRAWER INNER ELEMENTS ── */
+.sf{background:#fff;border:1.5px solid var(--border);border-radius:var(--r10);overflow:hidden;margin-bottom:10px}
+.sf-hd{background:var(--g800);color:#fff;padding:10px 14px;font-weight:800;font-size:11px;display:flex;align-items:center;gap:7px;letter-spacing:.3px}
+.sf-bd{padding:8px 10px;max-height:220px;overflow-y:auto}
+.sf-chk{display:flex;align-items:center;gap:8px;padding:6px 6px;cursor:pointer;font-size:12px;color:var(--ink2);border-radius:6px;transition:background .1s;user-select:none}
+.sf-chk:hover{background:var(--g50)}
+.sf-chk input{accent-color:var(--g600);width:14px;height:14px;flex-shrink:0}
+.sf-chk-emoji{font-size:14px;line-height:1}
+.sf-price-row{display:flex;gap:6px;align-items:center}
+.sf-price-inp{flex:1;border:1.5px solid var(--border);border-radius:6px;padding:7px 8px;font-size:12px;font-family:var(--font);color:var(--ink);width:0}
+.sf-price-inp:focus{border-color:var(--g400);outline:none}
+.btn-apply{width:100%;background:var(--g700);color:#fff;border:none;border-radius:var(--r8);padding:10px;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--font);transition:background .15s}
+.btn-apply:hover{background:var(--g800)}
+.btn-clear-all{display:block;text-align:center;background:transparent;border:1.5px solid var(--border);color:var(--muted);border-radius:var(--r8);padding:9px;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font);transition:all .15s;text-decoration:none}
+.btn-clear-all:hover{border-color:var(--red);color:var(--red)}
+
+/* ── SELLER NOTICE BANNER ── */
+.seller-notice{background:linear-gradient(135deg,#f0fdf4,#dcfce7);border:1.5px solid #86efac;border-radius:var(--r10);padding:12px 18px;margin-bottom:18px;font-size:12px;color:#166534;display:flex;align-items:center;gap:10px;font-weight:600}
+
+@media(max-width:900px){
+  .mkt-hero-title{font-size:28px}
+  .mkt-grid{grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px}
+}
+</style>
+{% endblock %}
+
+{% block content %}
+
+{% load static %}
+<!-- ══ HERO BANNER ══ -->
+{% if not filter_crop and not filter_city %}
+<section class="mkt-hero">
+  <video class="mkt-hero-video" autoplay muted loop playsinline preload="auto"
+         poster="{% static 'core/videos/hero_poster.jpg' %}">
+    <source src="{% static 'core/videos/hero.mp4' %}" type="video/mp4">
+    <source src="{% static 'core/videos/hero.webm' %}" type="video/webm">
+  </video>
+  <div class="mkt-hero-overlay"></div>
+  <div class="mkt-hero-inner">
+    <div class="mkt-hero-badge">
+      <span class="mkt-hero-badge-dot"></span>
+      Pakistan's #1 Crop Platform
+    </div>
+    <h1 class="mkt-hero-title">Pakistan's #1 <span>Verified</span><br>Crop Marketplace<br>for Farmers &amp; Buyers</h1>
+    <p class="mkt-hero-sub">Buy directly from verified farmers across Pakistan. Real mandi prices so you always know you're getting a fair deal.</p>
+    <div class="mkt-hero-stats">
+      <div class="mkt-hero-stat"><div class="mkt-hero-stat-n">{{ count }}+</div><div class="mkt-hero-stat-l">Live Listings</div></div>
+      <div class="mkt-hero-stat"><div class="mkt-hero-stat-n">9</div><div class="mkt-hero-stat-l">Cities Covered</div></div>
+      <div class="mkt-hero-stat"><div class="mkt-hero-stat-n">40+</div><div class="mkt-hero-stat-l">Crop Types</div></div>
+      <div class="mkt-hero-stat"><div class="mkt-hero-stat-n">Free</div><div class="mkt-hero-stat-l">To Join</div></div>
+    </div>
+  </div>
+</section>
+{% endif %}
+
+<!-- ══ STICKY SEARCH + SORT ══ -->
+<div class="mkt-search-wrap" id="mkt-search-wrap">
+  <div class="mkt-search-inner">
+    <button type="button" id="filterBtn" class="filter-btn {% if filter_crop or filter_city or filter_cat or pmin or pmax %}has-filters{% endif %}" onclick="openDrawer()">
+      <span>⚙️</span> Filters
+      <span class="filter-btn-dot"></span>
+    </button>
+    <form method="get" class="mkt-search-box" id="search-form">
+      <span class="mkt-search-icon">🔍</span>
+      <input type="text" name="crop" id="crop-search" value="{{ filter_crop }}"
+             class="mkt-search-inp" placeholder="Search crops — tomato, wheat, mango…"
+             autocomplete="off" list="crop-list">
+      <datalist id="crop-list">
+        {% for c in crops %}<option value="{{ c }}">{% endfor %}
+      </datalist>
+      {% if filter_city %}<input type="hidden" name="city" value="{{ filter_city }}">{% endif %}
+      {% if filter_cat %}<input type="hidden" name="category" value="{{ filter_cat }}">{% endif %}
+      {% if pmin %}<input type="hidden" name="pmin" value="{{ pmin }}">{% endif %}
+      {% if pmax %}<input type="hidden" name="pmax" value="{{ pmax }}">{% endif %}
+      {% if sort != 'newest' %}<input type="hidden" name="sort" value="{{ sort }}">{% endif %}
+    </form>
+    <div class="mkt-sort-pill">
+      <a href="?crop={{ filter_crop }}&city={{ filter_city }}&category={{ filter_cat }}&sort=newest" class="sort-p {% if sort == 'newest' %}on{% endif %}">Newest</a>
+      <a href="?crop={{ filter_crop }}&city={{ filter_city }}&category={{ filter_cat }}&sort=price-low" class="sort-p {% if sort == 'price-low' %}on{% endif %}">Price ↑</a>
+      <a href="?crop={{ filter_crop }}&city={{ filter_city }}&category={{ filter_cat }}&sort=price-high" class="sort-p {% if sort == 'price-high' %}on{% endif %}">Price ↓</a>
+    </div>
+    <div class="mkt-count-badge">{{ count }} listing{{ count|pluralize }}</div>
+  </div>
+</div>
+
+<!-- ══ FILTER DRAWER + BACKDROP ══ -->
+<div class="filter-backdrop" id="filterBackdrop" onclick="closeDrawer()"></div>
+<div class="mkt-drawer" id="filterDrawer">
+  <div class="drawer-hd">
+    <div class="drawer-hd-title">⚙️ Filters</div>
+    <button class="drawer-close" onclick="closeDrawer()">✕</button>
+  </div>
+  <div class="drawer-body">
+    <form method="get" id="filter-form">
+      {% if filter_crop %}<input type="hidden" name="crop" value="{{ filter_crop }}">{% endif %}
+
+      <!-- City filter -->
+      <div class="sf">
+        <div class="sf-hd">📍 City</div>
+        <div class="sf-bd">
+          {% for c in cities %}
+          <label class="sf-chk">
+            <input type="checkbox" name="city" value="{{ c }}" {% if filter_city == c %}checked{% endif %}>
+            {{ c }}
+          </label>
+          {% endfor %}
+        </div>
+      </div>
+
+      <!-- Crop Category filter -->
+      <div class="sf">
+        <div class="sf-hd">🌾 Crop Type</div>
+        <div class="sf-bd">
+          <label class="sf-chk">
+            <input type="radio" name="category" value="" {% if not filter_cat %}checked{% endif %}>
+            <span class="sf-chk-emoji">🌿</span> All Types
+          </label>
+          {% for group_name in crop_groups.keys %}
+          <label class="sf-chk">
+            <input type="radio" name="category" value="{{ group_name }}" {% if filter_cat == group_name %}checked{% endif %}>
+            <span class="sf-chk-emoji">{{ cat_icons|dict_get:group_name }}</span> {{ group_name }}
+          </label>
+          {% endfor %}
+        </div>
+      </div>
+
+      <!-- Price range -->
+      <div class="sf">
+        <div class="sf-hd">💰 Price (PKR/kg)</div>
+        <div class="sf-bd">
+          <div class="sf-price-row">
+            <input type="number" name="pmin" value="{{ pmin }}" placeholder="Min" class="sf-price-inp">
+            <span style="color:var(--muted);font-size:12px">—</span>
+            <input type="number" name="pmax" value="{{ pmax }}" placeholder="Max" class="sf-price-inp">
+          </div>
+        </div>
+      </div>
+
+      <button type="submit" class="btn-apply">Apply Filters</button>
+    </form>
+  </div>
+  <div class="drawer-footer">
+    <a href="{% url 'marketplace' %}" class="btn-clear-all">✕ Clear All Filters</a>
+  </div>
+</div>
+
+<!-- ══ BODY ══ -->
+<div class="mkt-body">
+  <div class="mkt-main">
+
+    <!-- Seller notice — hide action buttons for sellers -->
+    {% if user and user.role == 'seller' %}
+    <div class="seller-notice">
+      🌾 You're browsing as a <strong>Seller</strong>. Switch to a Buyer account to purchase crops.
+    </div>
+    {% endif %}
+
+    <!-- Active filter chips -->
+    {% if filter_crop or filter_city or filter_cat or pmin or pmax %}
+    <div class="filter-chips">
+      {% if filter_crop %}
+      <div class="chip">{{ emoji|dict_get:filter_crop }} {{ filter_crop }} <a href="?city={{ filter_city }}&category={{ filter_cat }}&sort={{ sort }}&pmin={{ pmin }}&pmax={{ pmax }}" class="chip-x">✕</a></div>
+      {% endif %}
+      {% if filter_cat %}
+      <div class="chip">{{ cat_icons|dict_get:filter_cat }} {{ filter_cat }} <a href="?crop={{ filter_crop }}&city={{ filter_city }}&sort={{ sort }}&pmin={{ pmin }}&pmax={{ pmax }}" class="chip-x">✕</a></div>
+      {% endif %}
+      {% if filter_city %}
+      <div class="chip">📍 {{ filter_city }} <a href="?crop={{ filter_crop }}&category={{ filter_cat }}&sort={{ sort }}&pmin={{ pmin }}&pmax={{ pmax }}" class="chip-x">✕</a></div>
+      {% endif %}
+      {% if pmin %}<div class="chip">Min {{ pmin }} PKR <a href="?crop={{ filter_crop }}&city={{ filter_city }}&category={{ filter_cat }}&sort={{ sort }}&pmax={{ pmax }}" class="chip-x">✕</a></div>{% endif %}
+      {% if pmax %}<div class="chip">Max {{ pmax }} PKR <a href="?crop={{ filter_crop }}&city={{ filter_city }}&category={{ filter_cat }}&sort={{ sort }}&pmin={{ pmin }}" class="chip-x">✕</a></div>{% endif %}
+      <a href="{% url 'marketplace' %}" class="chips-clear">Clear all</a>
+    </div>
+    {% endif %}
+
+    <!-- Section label -->
+    <div class="section-lbl" style="margin-top:14px">
+      <div class="section-lbl-line"></div>
+      <div class="section-lbl-text">
+        {% if filter_crop %}{{ filter_crop }} listings
+        {% elif filter_cat %}{{ cat_icons|dict_get:filter_cat }} {{ filter_cat }}
+        {% elif filter_city %}{{ filter_city }} listings
+        {% else %}All Fresh Listings{% endif %}
+      </div>
+      <div class="section-lbl-line"></div>
+    </div>
+
+    <!-- LISTINGS GRID -->
+    {% if listings %}
+    <div class="mkt-grid" id="listings-grid">
+      {% for l in listings %}
+      <div class="pc">
+
+        <!-- ── IMAGE SLIDER ── -->
+        <a href="{% url 'listing_detail' l.id %}" style="display:block;text-decoration:none;position:relative">
+          <div class="pc-img" id="pc-img-{{ l.id }}">
+            <div class="pc-slides" id="slides-{{ l.id }}">
+              {% if l.all_images %}
+                {% for img_url in l.all_images %}
+                <div class="pc-slide"><img src="{{ img_url }}" alt="{{ l.crop }} photo {{ forloop.counter }}" loading="lazy"></div>
+                {% endfor %}
+              {% else %}
+                <div class="pc-slide">{{ emoji|dict_get:l.crop }}</div>
+              {% endif %}
+            </div>
+
+            <!-- Nav arrows (only if multiple images) -->
+            {% if l.all_images|length > 1 %}
+            <div class="pc-nav" id="nav-{{ l.id }}">
+              <button class="pc-nav-btn" onclick="slideCard(event,'{{ l.id }}',-1)" title="Prev">‹</button>
+              <button class="pc-nav-btn" onclick="slideCard(event,'{{ l.id }}',1)" title="Next">›</button>
+            </div>
+            <!-- Dots -->
+            <div class="pc-dots" id="dots-{{ l.id }}">
+              {% for img_url in l.all_images %}
+              <div class="pc-dot {% if forloop.first %}on{% endif %}"></div>
+              {% endfor %}
+            </div>
+            <!-- Image count badge -->
+            <div class="pc-img-count">📷 {{ l.all_images|length }}</div>
+            {% endif %}
+
+            {% if l.discount > 0 %}<div class="pc-discount">-{{ l.discount }}% OFF</div>{% endif %}
+            <div class="pc-ai {{ l.badge_cls }}">{{ l.badge_txt }}</div>
+            {% if l.qty_sold > 0 %}<div class="pc-sold-bar"><div class="pc-sold-fill" style="width:{{ l.sold_pct|default:20 }}%"></div></div>{% endif %}
+            <div class="pc-fav" title="Wishlist">♡</div>
+          </div>
+        </a>
+
+        <!-- ── CARD BODY ── -->
+        <a href="{% url 'listing_detail' l.id %}" style="display:block;text-decoration:none;flex:1">
+          <div class="pc-body">
+            <div class="pc-crop">{{ emoji|dict_get:l.crop }} {{ l.crop }}</div>
+            <div class="pc-loc">📍 {{ l.city }}{% if l.market %} · {{ l.market|truncatechars:14 }}{% endif %}</div>
+            <div class="pc-price-row">
+              <span class="pc-price">{{ l.price }}</span>
+              <span class="pc-unit">PKR/kg</span>
+              {% if l.discount > 0 %}<span class="pc-orig">{{ l.market_avg }}</span>{% endif %}
+            </div>
+            {% if l.qty_sold > 0 %}<div class="pc-sold">📦 {{ l.qty_sold }} kg sold</div>{% endif %}
+
+            {# ── PRICE SIGNAL BADGE ── #}
+            {% if l.price_alert %}
+              <div class="pc-signal pc-signal-drop">⬇ Price drops ~{{ l.nxt_drop_pct }}% next month</div>
+            {% elif l.price_rising %}
+              <div class="pc-signal pc-signal-rise">⬆ Price rising ~{{ l.rise_pct }}% next month</div>
+            {% endif %}
+
+            {# ── REVIEW STRIP ── #}
+            <div class="pc-review-strip">
+              <div class="pc-review-avatars">
+                {% for r in l.recent_reviews %}
+                  <div class="pc-reviewer-av" title="{{ r.reviewer_name }}">{{ r.reviewer_name|slice:":1" }}</div>
+                {% empty %}
+                  <span class="pc-no-reviews">No reviews yet</span>
+                {% endfor %}
+              </div>
+              {% if l.avg_rating %}
+              <div class="pc-review-meta">
+                <span class="pc-review-stars">{% for i in "12345" %}{% if forloop.counter <= l.avg_rating|floatformat:"0" %}★{% else %}☆{% endif %}{% endfor %}</span>
+                <span>{{ l.avg_rating }} ({{ l.review_count }})</span>
+              </div>
+              {% elif l.review_count == 0 %}
+              <span class="pc-no-reviews">Be the first!</span>
+              {% endif %}
+            </div>
+          </div>
+        </a>
+
+        <!-- ── CARD FOOTER ── -->
+        <div class="pc-foot">
+          <a href="{% url 'listing_detail' l.id %}" class="pc-btn-view" id="view-{{ l.id }}">
+            <span>View Details &amp; Buy</span>
+            <span class="pc-btn-view-arrow">→</span>
+          </a>
+        </div>
+
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="mkt-empty">
+      <div class="mkt-empty-icon">🌱</div>
+      <div class="mkt-empty-title">No listings found</div>
+      <div class="mkt-empty-sub">Try a different crop, city, or price range</div>
+      <a href="{% url 'marketplace' %}" class="btn btn-primary btn-sm" style="margin-top:18px;display:inline-flex">Browse All</a>
+    </div>
+    {% endif %}
+
+  </div>
+</div>
+
+<script>
+// ── Search submit ──
+const searchInp = document.getElementById('crop-search');
+const form = document.getElementById('search-form');
+searchInp.addEventListener('change', function(){
+  if(this.value.trim()){ form.submit(); }
+});
+
+/* ── Filter Drawer ── */
+function openDrawer(){
+  document.getElementById('filterDrawer').classList.add('open');
+  document.getElementById('filterBackdrop').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeDrawer(){
+  document.getElementById('filterDrawer').classList.remove('open');
+  document.getElementById('filterBackdrop').classList.remove('open');
+  document.body.style.overflow = '';
+}
+document.addEventListener('keydown', e => { if(e.key === 'Escape') closeDrawer(); });
+
+/* ── Card Image Slider ── */
+const _slideIdx = {};
+
+function slideCard(e, id, dir){
+  e.preventDefault();
+  e.stopPropagation();
+  const slides = document.getElementById('slides-' + id);
+  if(!slides) return;
+  const count = slides.children.length;
+  if(count <= 1) return;
+  _slideIdx[id] = ((_slideIdx[id] || 0) + dir + count) % count;
+  slides.style.transform = 'translateX(-' + (_slideIdx[id] * 100) + '%)';
+  // Update dots
+  const dots = document.querySelectorAll('#dots-' + id + ' .pc-dot');
+  dots.forEach((d,i) => d.classList.toggle('on', i === _slideIdx[id]));
+}
+
+// Touch swipe support for image sliders
+document.querySelectorAll('.pc-img').forEach(function(el){
+  let startX = 0;
+  el.addEventListener('touchstart', function(e){ startX = e.touches[0].clientX; }, {passive:true});
+  el.addEventListener('touchend', function(e){
+    const dx = e.changedTouches[0].clientX - startX;
+    const id = el.id.replace('pc-img-','');
+    if(Math.abs(dx) > 40) slideCard({preventDefault:()=>{},stopPropagation:()=>{}}, id, dx < 0 ? 1 : -1);
+  }, {passive:true});
+});
+</script>
+{% endblock %}
